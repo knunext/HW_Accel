@@ -1,0 +1,195 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>용어집 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+
+#q{max-width:420px;margin:14px 0}td a{color:var(--accent);text-decoration:none}#gt td:nth-child(2){color:var(--trace)}
+</style></head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">용어집</span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L120.5,40 L124.5,58 L181.8,58 L185.8,40 L304.2,40 L308.2,58 L426.8,58 L430.8,40 L549.2,40 L553.2,58 L610.5,58 L614.5,40 L671.8,40 L675.8,58 L794.2,58 L798.2,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><h1>용어집</h1><p class="lede">책(Parallel Programming for FPGAs)의 영어 용어와 이 자료의 한국어 표현을 짝지었습니다. 오른쪽 장 번호를 누르면 처음 나오는 장으로 갑니다.</p></header>
+<main>
+<input type="text" id="q" placeholder="찾기: 예) II, 분할, latency" aria-label="용어 찾기">
+<div class="scroll"><table class="t" id="gt"><tr><th>이 자료</th><th>책의 용어</th><th>뜻</th><th>장</th></tr><tr data-k="레지스터 register 클럭 엣지에서 값을 받아 다음 엣지까지 유지하는 저장 소자"><td>레지스터</td><td class="m">register</td><td>클럭 엣지에서 값을 받아 다음 엣지까지 유지하는 저장 소자</td><td><a href="ch01-rtl.html">1장</a></td></tr><tr data-k="조합 논리 combinational logic 기억 없이 입력이 바뀌면 출력이 따라 바뀌는 논리"><td>조합 논리</td><td class="m">combinational logic</td><td>기억 없이 입력이 바뀌면 출력이 따라 바뀌는 논리</td><td><a href="ch01-rtl.html">1장</a></td></tr><tr data-k="논블로킹 대입 non-blocking assignment (<=) 블록 끝에서 한꺼번에 갱신되는 대입"><td>논블로킹 대입</td><td class="m">non-blocking assignment (<=)</td><td>블록 끝에서 한꺼번에 갱신되는 대입</td><td><a href="ch01-rtl.html">1장</a></td></tr><tr data-k="래치 latch 값을 정하지 않은 경로 때문에 생기는 원치 않는 기억 소자"><td>래치</td><td class="m">latch</td><td>값을 정하지 않은 경로 때문에 생기는 원치 않는 기억 소자</td><td><a href="ch01-rtl.html">1장</a></td></tr><tr data-k="전파 지연 propagation delay 입력이 바뀐 뒤 출력이 바뀌기까지의 시간"><td>전파 지연</td><td class="m">propagation delay</td><td>입력이 바뀐 뒤 출력이 바뀌기까지의 시간</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="setup / hold setup / hold time 엣지 전후로 입력이 안정되어 있어야 하는 시간"><td>setup / hold</td><td class="m">setup / hold time</td><td>엣지 전후로 입력이 안정되어 있어야 하는 시간</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="크리티컬 패스 critical path 클럭 주기를 정하는 가장 느린 경로"><td>크리티컬 패스</td><td class="m">critical path</td><td>클럭 주기를 정하는 가장 느린 경로</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="클럭 skew clock skew 같은 클럭이 위치마다 다른 시각에 도착하는 차이"><td>클럭 skew</td><td class="m">clock skew</td><td>같은 클럭이 위치마다 다른 시각에 도착하는 차이</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="여유 시간 slack 요구 시각 − 도착 시각. 음수면 위반"><td>여유 시간</td><td class="m">slack</td><td>요구 시각 − 도착 시각. 음수면 위반</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="정적 타이밍 분석 static timing analysis (STA) 모든 경로의 지연을 계산해 위반을 찾는 분석"><td>정적 타이밍 분석</td><td class="m">static timing analysis (STA)</td><td>모든 경로의 지연을 계산해 위반을 찾는 분석</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="LUT look-up table FPGA의 기본 논리 블록. 6입력 함수 하나"><td>LUT</td><td class="m">look-up table</td><td>FPGA의 기본 논리 블록. 6입력 함수 하나</td><td><a href="ch02-timing.html">2장</a></td></tr><tr data-k="데이터패스 datapath 레지스터, 연산기, MUX로 이루어진 계산 부분"><td>데이터패스</td><td class="m">datapath</td><td>레지스터, 연산기, MUX로 이루어진 계산 부분</td><td><a href="ch03-fsmd.html">3장</a></td></tr><tr data-k="컨트롤러 controller (FSM) 데이터패스에 제어 신호를 내는 상태 기계"><td>컨트롤러</td><td class="m">controller (FSM)</td><td>데이터패스에 제어 신호를 내는 상태 기계</td><td><a href="ch03-fsmd.html">3장</a></td></tr><tr data-k="ASMD 차트 ASMD chart 상태, 판단, 조건부 출력으로 그린 사이클 단위 흐름도"><td>ASMD 차트</td><td class="m">ASMD chart</td><td>상태, 판단, 조건부 출력으로 그린 사이클 단위 흐름도</td><td><a href="ch03-fsmd.html">3장</a></td></tr><tr data-k="테스트벤치 testbench 설계를 시뮬레이션하며 결과를 확인하는 코드"><td>테스트벤치</td><td class="m">testbench</td><td>설계를 시뮬레이션하며 결과를 확인하는 코드</td><td><a href="ch03-fsmd.html">3장</a></td></tr><tr data-k="정답 모델 golden (reference) model 같은 입력에 대한 기대 출력을 만드는 기준 구현"><td>정답 모델</td><td class="m">golden (reference) model</td><td>같은 입력에 대한 기대 출력을 만드는 기준 구현</td><td><a href="ch03-fsmd.html">3장</a></td></tr><tr data-k="latency latency 입력 하나가 들어가서 결과가 나올 때까지의 시간"><td>latency</td><td class="m">latency</td><td>입력 하나가 들어가서 결과가 나올 때까지의 시간</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="처리량 throughput 단위 시간당 나오는 결과 수"><td>처리량</td><td class="m">throughput</td><td>단위 시간당 나오는 결과 수</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="버블 bubble 파이프라인의 빈 칸 (valid=0)"><td>버블</td><td class="m">bubble</td><td>파이프라인의 빈 칸 (valid=0)</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="배압 backpressure 받는 쪽이 ready=0으로 흐름을 멈추게 하는 것"><td>배압</td><td class="m">backpressure</td><td>받는 쪽이 ready=0으로 흐름을 멈추게 하는 것</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="스키드 버퍼 skid buffer ready를 레지스터로 끊기 위한 두 칸짜리 버퍼"><td>스키드 버퍼</td><td class="m">skid buffer</td><td>ready를 레지스터로 끊기 위한 두 칸짜리 버퍼</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="재귀, 되먹임 recurrence, feedback 이번 계산이 앞 계산의 결과를 기다리는 관계"><td>재귀, 되먹임</td><td class="m">recurrence, feedback</td><td>이번 계산이 앞 계산의 결과를 기다리는 관계</td><td><a href="ch04-pipeline.html">4장</a></td></tr><tr data-k="메타스테이빌리티 metastability 플립플롭 출력이 0도 1도 아닌 상태에 머무는 현상"><td>메타스테이빌리티</td><td class="m">metastability</td><td>플립플롭 출력이 0도 1도 아닌 상태에 머무는 현상</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="동기화기 synchronizer 다른 클럭의 신호를 받는 플립플롭 사슬"><td>동기화기</td><td class="m">synchronizer</td><td>다른 클럭의 신호를 받는 플립플롭 사슬</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="클럭 도메인 교차 clock domain crossing (CDC) 서로 다른 클럭 사이로 신호를 넘기는 것"><td>클럭 도메인 교차</td><td class="m">clock domain crossing (CDC)</td><td>서로 다른 클럭 사이로 신호를 넘기는 것</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="그레이 코드 Gray code 이웃한 수가 한 비트만 다른 부호"><td>그레이 코드</td><td class="m">Gray code</td><td>이웃한 수가 한 비트만 다른 부호</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="비동기 FIFO asynchronous FIFO 쓰기와 읽기 클럭이 다른 FIFO"><td>비동기 FIFO</td><td class="m">asynchronous FIFO</td><td>쓰기와 읽기 클럭이 다른 FIFO</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="클럭 enable clock enable 클럭을 막는 대신 대입 여부를 정하는 신호"><td>클럭 enable</td><td class="m">clock enable</td><td>클럭을 막는 대신 대입 여부를 정하는 신호</td><td><a href="ch05-sync-async.html">5장</a></td></tr><tr data-k="고수준 합성 high-level synthesis (HLS) C/C++에서 RTL을 만드는 과정"><td>고수준 합성</td><td class="m">high-level synthesis (HLS)</td><td>C/C++에서 RTL을 만드는 과정</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="데이터 흐름 그래프 data flow graph (DFG) 연산과 데이터 의존성의 그래프"><td>데이터 흐름 그래프</td><td class="m">data flow graph (DFG)</td><td>연산과 데이터 의존성의 그래프</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="스케줄링 scheduling 각 연산을 몇 번째 사이클에 할지 정하기"><td>스케줄링</td><td class="m">scheduling</td><td>각 연산을 몇 번째 사이클에 할지 정하기</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="할당, 바인딩 allocation, binding 연산기 개수를 정하고 연산을 연산기에 배정하기"><td>할당, 바인딩</td><td class="m">allocation, binding</td><td>연산기 개수를 정하고 연산을 연산기에 배정하기</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="체이닝 operation chaining 한 사이클 안에 연산을 이어 붙이기"><td>체이닝</td><td class="m">operation chaining</td><td>한 사이클 안에 연산을 이어 붙이기</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="여유 (스케줄링) mobility ALAP − ASAP. 미룰 수 있는 사이클 수"><td>여유 (스케줄링)</td><td class="m">mobility</td><td>ALAP − ASAP. 미룰 수 있는 사이클 수</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="임의 정밀도 정수 arbitrary precision integer (ap_int) 비트 수를 직접 정하는 정수 타입"><td>임의 정밀도 정수</td><td class="m">arbitrary precision integer (ap_int)</td><td>비트 수를 직접 정하는 정수 타입</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="C/RTL 공동 시뮬레이션 C/RTL co-simulation C 테스트벤치로 생성된 RTL을 검증"><td>C/RTL 공동 시뮬레이션</td><td class="m">C/RTL co-simulation</td><td>C 테스트벤치로 생성된 RTL을 검증</td><td><a href="ch06-hls.html">6장</a></td></tr><tr data-k="시작 간격 initiation interval (II) 다음 반복을 시작하기까지의 사이클"><td>시작 간격</td><td class="m">initiation interval (II)</td><td>다음 반복을 시작하기까지의 사이클</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="반복 지연 iteration latency (IL) 반복 하나가 끝나기까지의 사이클"><td>반복 지연</td><td class="m">iteration latency (IL)</td><td>반복 하나가 끝나기까지의 사이클</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="루프 펼치기 loop unrolling 루프 몸체를 복사해 여러 반복을 동시에"><td>루프 펼치기</td><td class="m">loop unrolling</td><td>루프 몸체를 복사해 여러 반복을 동시에</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="루프 파이프라인 loop pipelining 반복을 II 간격으로 겹쳐 실행"><td>루프 파이프라인</td><td class="m">loop pipelining</td><td>반복을 II 간격으로 겹쳐 실행</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="조건문 빼내기 code hoisting 한 반복에서만 참인 조건을 루프 밖으로"><td>조건문 빼내기</td><td class="m">code hoisting</td><td>한 반복에서만 참인 조건을 루프 밖으로</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="루프 쪼개기 loop fission 성격이 다른 일을 루프 둘로 나누기"><td>루프 쪼개기</td><td class="m">loop fission</td><td>성격이 다른 일을 루프 둘로 나누기</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="루프 합치기 loop flattening 중첩 루프를 루프 하나로"><td>루프 합치기</td><td class="m">loop flattening</td><td>중첩 루프를 루프 하나로</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="반복 횟수 trip count 루프가 도는 횟수"><td>반복 횟수</td><td class="m">trip count</td><td>루프가 도는 횟수</td><td><a href="ch07-hls-loops.html">7장</a></td></tr><tr data-k="배열 분할 array partitioning 배열을 여러 메모리로 쪼개 포트를 늘림"><td>배열 분할</td><td class="m">array partitioning</td><td>배열을 여러 메모리로 쪼개 포트를 늘림</td><td><a href="ch08-memory.html">8장</a></td></tr><tr data-k="블록 RAM block RAM (BRAM) FPGA의 포트 2개짜리 메모리 블록"><td>블록 RAM</td><td class="m">block RAM (BRAM)</td><td>FPGA의 포트 2개짜리 메모리 블록</td><td><a href="ch08-memory.html">8장</a></td></tr><tr data-k="반복 사이 의존성 loop-carried dependence 다음 반복이 이전 반복의 결과를 쓰는 의존성"><td>반복 사이 의존성</td><td class="m">loop-carried dependence</td><td>다음 반복이 이전 반복의 결과를 쓰는 의존성</td><td><a href="ch08-memory.html">8장</a></td></tr><tr data-k="거짓 의존성 false dependence 도구는 의존성이 있다고 보지만 실제로는 없는 것"><td>거짓 의존성</td><td class="m">false dependence</td><td>도구는 의존성이 있다고 보지만 실제로는 없는 것</td><td><a href="ch08-memory.html">8장</a></td></tr><tr data-k="값 넘겨주기 forwarding 아직 쓰이지 않은 값을 레지스터에서 바로 넘겨주기"><td>값 넘겨주기</td><td class="m">forwarding</td><td>아직 쓰이지 않은 값을 레지스터에서 바로 넘겨주기</td><td><a href="ch08-memory.html">8장</a></td></tr><tr data-k="task latency / interval task latency / task interval 함수 한 번의 지연 / 연속 호출의 시작 간격"><td>task latency / interval</td><td class="m">task latency / task interval</td><td>함수 한 번의 지연 / 연속 호출의 시작 간격</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="작업 파이프라인 task pipelining (DATAFLOW) 함수·루프 단위로 겹쳐 실행"><td>작업 파이프라인</td><td class="m">task pipelining (DATAFLOW)</td><td>함수·루프 단위로 겹쳐 실행</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="ping-pong 버퍼 ping-pong buffer 두 메모리를 번갈아 쓰는 단계 사이 버퍼"><td>ping-pong 버퍼</td><td class="m">ping-pong buffer</td><td>두 메모리를 번갈아 쓰는 단계 사이 버퍼</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="스트림 stream (hls::stream) 순서대로 한 번씩 읽고 쓰는 FIFO 연결"><td>스트림</td><td class="m">stream (hls::stream)</td><td>순서대로 한 번씩 읽고 쓰는 FIFO 연결</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="줄 버퍼 line buffer 영상의 윗줄 몇 개만 저장하는 버퍼"><td>줄 버퍼</td><td class="m">line buffer</td><td>영상의 윗줄 몇 개만 저장하는 버퍼</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="창 버퍼 window buffer 필터에 필요한 주변 픽셀을 담는 레지스터"><td>창 버퍼</td><td class="m">window buffer</td><td>필터에 필요한 주변 픽셀을 담는 레지스터</td><td><a href="ch09-dataflow.html">9장</a></td></tr><tr data-k="2의 보수 two's complement 맨 위 비트의 무게를 음수로 하는 정수 표현"><td>2의 보수</td><td class="m">two's complement</td><td>맨 위 비트의 무게를 음수로 하는 정수 표현</td><td><a href="ch10-numbers-fir.html">10장</a></td></tr><tr data-k="고정소수점 fixed point (ap_fixed) 정수에 약속된 소수점 위치를 둔 표현"><td>고정소수점</td><td class="m">fixed point (ap_fixed)</td><td>정수에 약속된 소수점 위치를 둔 표현</td><td><a href="ch10-numbers-fir.html">10장</a></td></tr><tr data-k="넘침, 반올림 overflow, rounding (quantization) 범위 초과 처리와 버리는 자리 처리"><td>넘침, 반올림</td><td class="m">overflow, rounding (quantization)</td><td>범위 초과 처리와 버리는 자리 처리</td><td><a href="ch10-numbers-fir.html">10장</a></td></tr><tr data-k="CORDIC CORDIC 시프트와 덧셈으로 회전해 삼각함수를 구하는 방법"><td>CORDIC</td><td class="m">CORDIC</td><td>시프트와 덧셈으로 회전해 삼각함수를 구하는 방법</td><td><a href="ch10-numbers-fir.html">10장</a></td></tr><tr data-k="비트 증가 bit growth 곱셈과 누적으로 필요한 비트가 늘어나는 것"><td>비트 증가</td><td class="m">bit growth</td><td>곱셈과 누적으로 필요한 비트가 늘어나는 것</td><td><a href="ch10-numbers-fir.html">10장</a></td></tr><tr data-k="시스톨릭 배열 systolic array 이웃끼리만 데이터를 넘기는 PE 격자"><td>시스톨릭 배열</td><td class="m">systolic array</td><td>이웃끼리만 데이터를 넘기는 PE 격자</td><td><a href="ch11-systolic.html">11장</a></td></tr><tr data-k="처리 요소 processing element (PE) 배열을 이루는 같은 모양의 작은 연산 단위"><td>처리 요소</td><td class="m">processing element (PE)</td><td>배열을 이루는 같은 모양의 작은 연산 단위</td><td><a href="ch11-systolic.html">11장</a></td></tr><tr data-k="가중치 고정 weight stationary 가중치를 PE에 두고 입력을 흘리는 방식"><td>가중치 고정</td><td class="m">weight stationary</td><td>가중치를 PE에 두고 입력을 흘리는 방식</td><td><a href="ch11-systolic.html">11장</a></td></tr><tr data-k="블록화, 타일링 blocking, tiling 큰 행렬을 배열 크기 조각으로 나눠 계산"><td>블록화, 타일링</td><td class="m">blocking, tiling</td><td>큰 행렬을 배열 크기 조각으로 나눠 계산</td><td><a href="ch11-systolic.html">11장</a></td></tr><tr data-k="데이터 재사용 data reuse 한 번 읽은 값을 여러 연산에 다시 쓰는 것"><td>데이터 재사용</td><td class="m">data reuse</td><td>한 번 읽은 값을 여러 연산에 다시 쓰는 것</td><td><a href="ch11-systolic.html">11장</a></td></tr><tr data-k="양자화 quantization 실수를 적은 비트의 정수로 바꾸는 것"><td>양자화</td><td class="m">quantization</td><td>실수를 적은 비트의 정수로 바꾸는 것</td><td><a href="ch12-mini-tpu.html">12장</a></td></tr><tr data-k="배율 scale factor 정수와 실제 값 사이의 비율"><td>배율</td><td class="m">scale factor</td><td>정수와 실제 값 사이의 비율</td><td><a href="ch12-mini-tpu.html">12장</a></td></tr><tr data-k="보정 calibration 데이터를 넣어 보고 활성값 범위를 재는 것"><td>보정</td><td class="m">calibration</td><td>데이터를 넣어 보고 활성값 범위를 재는 것</td><td><a href="ch12-mini-tpu.html">12장</a></td></tr><tr data-k="이진 신경망 binary neural network (BNN) 가중치와 활성값이 ±1인 신경망"><td>이진 신경망</td><td class="m">binary neural network (BNN)</td><td>가중치와 활성값이 ±1인 신경망</td><td><a href="ch12-mini-tpu.html">12장</a></td></tr><tr data-k="popcount population count 1의 개수 세기"><td>popcount</td><td class="m">population count</td><td>1의 개수 세기</td><td><a href="ch12-mini-tpu.html">12장</a></td></tr></table></div>
+<h2>실험별 가정치</h2>
+<p class="prose">실험의 숫자는 원리를 보이기 위한 교육용 가정이며 장마다 다릅니다. 실제 값은 FPGA 종류, 목표 클럭, 도구 버전에 따라 달라집니다.</p>
+<div class="scroll"><table class="t"><tr><td class="m">실험 2-1</td><td>t_cq 0.30, t_su 0.25, t_h 0.15, 최단 경로 0.20 ns, 리플 캐리 비트당 0.25 ns</td></tr><tr><td class="m">실험 2-3</td><td>LUT 0.12 ns, LUT 입력 배선 0.35 ns, t_cq+t_su 0.5 ns</td></tr><tr><td class="m">실험 4-1</td><td>레지스터 비용 0.5 ns, 블록 지연 3.2 / 1.4 / 0.8 / 0.6 / 2.8 / 1.2 ns</td></tr><tr><td class="m">실험 5-2, 5-3</td><td>클럭 5 ns, setup 0.20, hold 0.10 ns, τ 50 ps, T₀ 100 ps</td></tr><tr><td class="m">실험 6-1</td><td>곱셈 3.2 ns, ALU 1.1 ns, 레지스터 0.5 ns</td></tr><tr><td class="m">실험 7-1</td><td>float: 읽기 2, 곱셈 3, 덧셈 4, 쓰기 1사이클, BRAM 포트 2</td></tr><tr><td class="m">실험 7-3</td><td>int: 읽기 2, 곱셈 2, 덧셈 1사이클</td></tr><tr><td class="m">실험 8-2</td><td>읽기, 더하기, 쓰기 각 1사이클</td></tr><tr><td class="m">실험 10-3, 10-4</td><td>FIR 세 구현의 II와 latency는 단순화한 값</td></tr><tr><td class="m">실험 11-2, 12-2</td><td>타일마다 싣기 S사이클, 흘리기 M + K_t + N_t − 2사이클</td></tr></table></div>
+<footer><p><a href="index.html">목차로</a></p></footer>
+</main>
+<script>
+const q=document.getElementById('q');q.addEventListener('input',()=>{const v=q.value.trim().toLowerCase();document.querySelectorAll('#gt tr[data-k]').forEach(r=>{r.hidden=v&&!r.dataset.k.toLowerCase().includes(v);});});
+</script>
+</body></html>

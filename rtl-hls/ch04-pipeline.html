@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>4장. 파이프라이닝 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">4장</span><span class="dots" aria-label="12장 중 4장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L120.5,40 L124.5,58 L181.8,58 L185.8,40 L243.0,40 L247.0,58 L304.2,58 L308.2,40 L365.5,40 L369.5,58 L426.8,58 L430.8,40 L488.0,40 L492.0,58 L549.2,58 L553.2,40 L610.5,40 L614.5,58 L671.8,58 L675.8,40 L733.0,40 L737.0,58 L794.2,58 L798.2,40 L855.5,40 L859.5,58 L916.8,58 L920.8,40 L980.0,40" style="stroke:var(--trace)"/></svg><div class="num">4장</div><h1>파이프라이닝</h1><p class="lede">레지스터를 끼워 넣어 클럭을 올리는 대신 무엇을 내주는지 따져 보고, valid/ready로 흐름을 멈추고 이어 가는 법을 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">4.1</span>세탁기와 건조기</h2>
+<p>빨래 한 바구니를 세탁(30분), 건조(40분), 개기(20분) 하면 90분이 걸립니다. 네 바구니를 하나씩 끝내면 360분입니다. 하지만 첫 바구니가 건조기에 들어가는 순간 두 번째 바구니를 세탁기에 넣으면, 가장 느린 건조기가 쉬지 않고 돌아가는 한 40분마다 한 바구니씩 끝납니다. 한 바구니가 걸리는 시간은 그대로인데, 시간당 처리량은 두 배 넘게 늘었습니다.</p>
+<p>회로도 같습니다. 긴 조합 논리 중간에 레지스터를 끼워 넣으면, 각 구간(스테이지)은 짧아져서 클럭을 올릴 수 있고, 여러 데이터가 서로 다른 스테이지에서 동시에 처리됩니다.</p>
+<ul>
+<li><b>latency</b>: 데이터 하나가 들어가서 결과가 나올 때까지 걸리는 시간. 사이클 수 또는 ns.</li>
+<li><b>throughput</b>: 단위 시간당 나오는 결과 수. 파이프라인이 꽉 차 있으면 매 사이클 하나씩 나옵니다.</li>
+</ul>
+<p>2장에서 본 것처럼 레지스터를 지날 때마다 t<sub>cq</sub> + t<sub>su</sub>만큼의 고정 비용이 붙습니다. 그래서 무한정 잘게 쪼갤 수는 없고, 쪼갤수록 latency는 오히려 늘어납니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-1</b><span>레지스터를 어디에 끼울까</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>연산 블록 여섯 개가 이어진 10 ns짜리 조합 회로입니다. 블록 사이 경계를 눌러 파이프라인 레지스터를 넣거나 빼 보세요. 레지스터 하나의 비용은 t<sub>cq</sub>+t<sub>su</sub> = 0.5 ns, 레지스터 비트 수는 그 지점을 지나는 데이터 폭입니다.</p>
+<div class="scroll"><svg id="p1svg" class="sch" viewBox="0 0 560 150" role="img" aria-label="파이프라인 단 나누기"></svg></div>
+<div class="ctrl" id="p1cuts"></div>
+<div class="stats" id="p1stats"></div>
+<p class="msg" id="p1msg"></p>
+<div class="sub">가능한 32가지 배치 전부: 가로는 처리량, 세로는 latency</div>
+<div class="scroll"><svg id="p1sc" class="sch" viewBox="0 0 560 230" role="img" aria-label="처리량과 latency 산점도"></svg></div>
+<p class="hint">오른쪽 아래로 갈수록 좋은 설계입니다. 처리량을 올리면 latency가 늘어나는 맞교환이 보입니다. 같은 단 수라도 단마다 지연이 고르게 나뉘어야 처리량이 높습니다.</p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">4.2</span>파이프라인 안에서 데이터가 흐르는 모습</h2>
+<p>파이프라인에 데이터가 매 사이클 들어온다는 보장은 없습니다. 그래서 데이터와 함께 <b>valid 비트</b>를 같이 흘려보내서 “이 스테이지의 값이 진짜 데이터인가”를 표시합니다. valid=0인 칸을 <b>버블</b>이라고 부릅니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-2</b><span>데이터와 버블의 이동</span></figcaption>
+<div class="body">
+<p class="hint">위 실험에서 정한 단 수를 그대로 씁니다. 맨 윗줄 칸을 눌러 그 사이클에 데이터를 넣을지(1) 말지(0) 정하세요.</p>
+<div class="scroll" id="p2grid"></div>
+<div class="stats" id="p2stats"></div>
+</div>
+</figure>
+
+<div class="prose">
+<p>2단짜리 곱셈-덧셈 파이프라인을 Verilog로 쓰면 이렇습니다.</p>
+<pre class="code">
+// y = a * b + c 를 2단으로
+always @(posedge clk) begin
+  // 1단: 곱셈
+  p1 &lt;= a * b;
+  c1 &lt;= c;          // c도 한 단 늦춰서 p1과 박자를 맞춘다
+  v1 &lt;= in_valid;
+  // 2단: 덧셈
+  y  &lt;= p1 + c1;
+  v2 &lt;= v1;
+end
+assign out_valid = v2;
+</pre>
+<div class="note warn"><b>함께 가야 하는 값도 같이 늦춰야 한다</b>
+<code>c1 &lt;= c</code>가 없이 <code>y &lt;= p1 + c</code>라고 쓰면, p1은 한 사이클 전 입력의 곱인데 c는 지금 입력이라 서로 다른 데이터가 더해집니다. 파이프라인에서 가장 흔한 버그입니다.</div>
+
+<h2><span class="sec">4.3</span>valid/ready 핸드셰이크</h2>
+<p>4.2의 valid는 “데이터가 있다”만 알려 줍니다. 받는 쪽이 바빠서 지금은 못 받는 경우까지 다루려면 신호가 하나 더 필요합니다. 보내는 쪽과 받는 쪽이 서로의 사정을 모를 때, 두 신호로 약속을 정합니다. 보내는 쪽은 “데이터가 준비됐다”는 <code>valid</code>를, 받는 쪽은 “받을 수 있다”는 <code>ready</code>를 올립니다. <b>같은 클럭 엣지에서 둘 다 1이면 전송</b>이 일어납니다. 받는 쪽이 바빠서 ready를 내리는 것을 배압(backpressure)이라고 합니다. 3장의 start/done도 같은 생각입니다.</p>
+<ul>
+<li>보내는 쪽은 한번 valid를 올리면, 전송될 때까지 valid와 데이터를 바꾸면 안 됩니다.</li>
+<li>valid가 ready를 기다려서 올라가면 안 됩니다. 서로 상대를 기다리다 영원히 멈출 수 있습니다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-3</b><span>valid와 ready를 직접 조작하기</span></figcaption>
+<div class="body">
+<p class="hint">파형의 valid, ready 칸을 눌러 0과 1을 바꿔 보세요. 전송이 일어난 사이클에는 ✓가 표시됩니다.</p>
+<div class="scroll" id="h1wave"></div>
+<div class="stats" id="h1stats"></div>
+<p class="msg" id="h1msg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">4.4</span>파이프라인을 멈추기: 배압</h2>
+<p>이제 파이프라인 끝에 ready를 달아 봅시다. 출력 쪽이 ready=0이면 마지막 단의 데이터를 내보낼 수 없으니, 뒤에서부터 데이터가 쌓입니다. 멈추는 방법은 크게 두 가지입니다.</p>
+<ul>
+<li><b>전체 멈춤</b>: 마지막 단이 못 나가면 모든 단이 그 자리에서 멈춥니다. 단순하지만, 앞쪽에 빈 칸(버블)이 있어도 같이 멈춥니다.</li>
+<li><b>빈 칸 당기기</b>: 각 단은 바로 뒤 단이 비어 있거나 이번 사이클에 비워지면 움직입니다. 버블을 메워 가며 더 많이 받아들이지만, “움직여도 되나”라는 정보가 뒤에서 앞으로 한 사이클 안에 전달되어야 합니다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-4</b><span>출력이 막혔을 때</span></figcaption>
+<div class="body">
+<p class="hint">3단 파이프라인입니다. 맨 윗줄(새 데이터 도착)과 out_ready 줄의 칸을 눌러 바꿔 보세요. 들어오지 못한 데이터는 보내는 쪽에 쌓였다가 다음 기회에 들어갑니다. 주황 테두리는 데이터를 들고 그 자리에 멈춰 있는 단입니다.</p>
+<div class="ctrl"><span class="lbl">멈추는 방식</span><div class="seg" id="st_pol"><button data-v="g" aria-pressed="true">전체 멈춤</button><button data-v="c" aria-pressed="false">빈 칸 당기기</button></div></div>
+<div class="scroll" id="stgrid"></div>
+<div class="stats" id="ststats"></div>
+<p class="msg" id="stmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<div class="note warn"><b>ready 경로도 타이밍 경로다</b>
+빈 칸 당기기에서 ready는 마지막 단에서 첫 단까지 조합 논리로 거꾸로 전달됩니다. 단이 많아지면 이 경로가 2장의 크리티컬 패스가 됩니다. 전체 멈춤도 멈춤 신호 하나가 모든 단의 레지스터로 퍼져 나가야 해서 배선이 길어집니다. 실무에서는 단 사이에 레지스터 두 개짜리 작은 버퍼(스키드 버퍼)를 넣어 ready까지 레지스터로 끊습니다.</div>
+
+
+<h2><span class="sec">4.5</span>되먹임이 있으면 쪼개도 빨라지지 않는다</h2>
+<p>지금까지의 파이프라인은 데이터가 앞으로만 흘렀습니다. 그런데 누산기처럼 <b>결과가 다시 입력으로 돌아오는</b> 회로는 사정이 다릅니다.</p>
+<pre class="code">
+always @(posedge clk)
+  if (in_valid) acc &lt;= acc + x;   // 이번 덧셈에 지난 덧셈의 결과가 필요
+</pre>
+<p>덧셈기가 느려서 2단 파이프라인으로 쪼갰다고 해 봅시다. 클럭은 빨라지지만, 다음 덧셈은 지난 덧셈이 2단을 다 지나야 시작할 수 있습니다. 결국 2사이클에 하나씩만 받게 되어 처리량은 그대로입니다. 되먹임 고리를 한 바퀴 도는 데 걸리는 사이클 수가 받아들이는 간격을 정하기 때문입니다. 레지스터를 옮기는 retiming으로도 고리 안의 레지스터 개수는 바꿀 수 없습니다.</p>
+<p>해결책은 고리를 여러 개로 나누는 것입니다. 부분합 누산기를 단 수만큼 두고 입력을 번갈아 보내면, 각 누산기는 L사이클에 한 번만 더하면 되므로 전체로는 매 사이클 하나씩 받습니다. 마지막에 부분합을 한 번 더 더합니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-5</b><span>누산기를 파이프라인하면</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">덧셈기 단 수 L</span><div class="seg" id="fb_l"><button data-v="1" aria-pressed="false">1</button><button data-v="2" aria-pressed="true">2</button><button data-v="3" aria-pressed="false">3</button><button data-v="4" aria-pressed="false">4</button></div></div>
+<div class="ctrl"><span class="lbl">누산기</span><div class="seg" id="fb_k"><button data-v="1" aria-pressed="true">1개</button><button data-v="L" aria-pressed="false">부분합 L개</button></div></div>
+<div class="scroll" id="fbsvg"></div>
+<div class="stats" id="fbstats"></div>
+<p class="msg" id="fbmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>7장에서 내적 루프의 II가 덧셈 지연만큼 커지는 것, 그리고 부분합 4개로 바꾸면 II=1이 되는 것이 바로 이 현상입니다. HLS 도구는 같은 일을 대신 해 주지만, 원리는 RTL과 같습니다.</p>
+
+<h2><span class="sec">4.6</span>ready도 레지스터로 끊기: 스키드 버퍼</h2>
+<p>4.4의 끝에서 ready 경로가 길어진다고 했습니다. 단 하나짜리 버퍼를 생각해 봅시다. 버퍼가 비었거나 이번에 비워지면 받을 수 있으므로 <code>in_ready = !full || out_ready</code>입니다. 그러면 뒤쪽의 out_ready가 조합 논리를 거쳐 그대로 앞쪽 in_ready가 됩니다. 이런 단을 여러 개 이으면 ready가 맨 뒤에서 맨 앞까지 한 사이클 안에 달려가야 합니다.</p>
+<p><b>스키드 버퍼</b>는 레지스터를 하나 더 둡니다. in_ready를 레지스터 값(“여분 칸이 비었나”)으로만 정하므로, out_ready가 0으로 떨어진 바로 그 사이클에 앞쪽은 이미 데이터를 하나 보낸 뒤일 수 있습니다. 그 하나를 여분 칸이 받아 줍니다. 미끄러지는(skid) 차를 받아 주는 완충 구간이라는 뜻입니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 4-6</b><span>스키드 버퍼가 받아 주는 순간</span></figcaption>
+<div class="body">
+<p class="hint">새 데이터 도착과 out_ready 칸을 눌러 바꿔 보세요. in_ready 줄의 글자색이 파란색이면 조합 논리로, 초록색이면 레지스터 값으로 정해진 것입니다.</p>
+<div class="ctrl"><span class="lbl">버퍼</span><div class="seg" id="sk_m"><button data-v="0" aria-pressed="false">한 칸 (스키드 없음)</button><button data-v="1" aria-pressed="true">스키드 버퍼 (두 칸)</button></div></div>
+<div class="scroll" id="skgrid"></div>
+<div class="stats" id="skstats"></div>
+<p class="msg" id="skmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>스키드 버퍼는 처리량을 떨어뜨리지 않으면서 ready를 레지스터로 끊습니다. 대신 레지스터가 한 벌 더 들고, 꽉 찬 뒤 다시 받기 시작할 때 한 사이클이 늦습니다. 긴 파이프라인에서는 몇 단마다 이런 버퍼를 넣어 ready 경로를 짧게 유지합니다.</p>
+
+<div class="recap"><b>이 장의 요점</b><ul><li>파이프라인은 latency를 내주고 throughput을 얻습니다. 가장 느린 단이 클럭을 정합니다.</li><li>함께 가야 하는 값도 같이 늦춥니다. valid로 버블을, valid/ready로 배압을 다룹니다.</li><li>되먹임 고리는 쪼개도 빨라지지 않습니다. 부분합으로 고리를 여러 갈래로 나눕니다.</li><li>ready 경로도 타이밍 경로입니다. 스키드 버퍼로 끊습니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 1.4.2 Area/Throughput Tradeoffs, 1.4.3 Restrictions on Processing Rate, 2.9 Loop Pipelining</p></div>
+<h2><span class="sec">4.7</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+const PB=[{n:'곱셈',d:3.2},{n:'덧셈',d:1.4},{n:'비교',d:0.8},{n:'시프트',d:0.6},{n:'곱셈',d:2.8},{n:'덧셈',d:1.2}];
+const PW=[64,34,34,32,64];
+const TREG=0.5;
+let cuts=[false,false,false,false,false];
+function evalCuts(c){
+  const st=[];let acc=0;
+  PB.forEach((b,i)=>{acc+=b.d;if(i===PB.length-1||c[i]){st.push(acc);acc=0;}});
+  const T=Math.max(...st)+TREG,S=st.length;
+  return {st,T,S,f:1000/T,lat:S*T,bits:c.reduce((a,v,i)=>a+(v?PW[i]:0),0)};
+}
+function drawP1(){
+  const r=evalCuts(cuts),x0=24,k=49,X=[x0];PB.forEach(b=>X.push(X[X.length-1]+Math.max(44,b.d*k)));
+  let s='';
+  s+='<rect x="'+(x0-14)+'" y="24" width="8" height="56" style="fill:var(--ink)"/><rect x="'+(X[6]+6)+'" y="24" width="8" height="56" style="fill:var(--ink)"/>';
+  PB.forEach((b,i)=>{s+='<rect x="'+(X[i]+2)+'" y="30" width="'+(X[i+1]-X[i]-4)+'" height="44" rx="2" class="box" style="fill:var(--sheet2)"/><text x="'+((X[i]+X[i+1])/2)+'" y="50" text-anchor="middle" style="font-size:12.5px">'+b.n+'</text><text x="'+((X[i]+X[i+1])/2)+'" y="66" text-anchor="middle" class="m dim" style="font-size:11px">'+b.d+'ns</text>';});
+  for(let i=0;i<5;i++){const x=X[i+1];
+    s+='<g class="cut" data-i="'+i+'" style="cursor:pointer"><rect x="'+(x-12)+'" y="10" width="24" height="84" style="fill:transparent"/>'+
+      (cuts[i]?'<rect x="'+(x-4)+'" y="24" width="8" height="56" style="fill:var(--accent)"/>':'<circle cx="'+x+'" cy="16" r="7" style="fill:var(--sheet);stroke:var(--accent)"/><text x="'+x+'" y="20" text-anchor="middle" style="font-size:12px;fill:var(--accent)">+</text>')+'</g>';}
+  const mx=Math.max(...r.st);let bi=0;
+  r.st.forEach((d,i)=>{let e=bi,acc=0;while(e<PB.length){acc+=PB[e].d;if(e===PB.length-1||cuts[e])break;e++;}const a=X[bi],b=X[e+1];bi=e+1;const slow=d===mx;
+    s+='<path d="M'+(a+3)+',96 V104 H'+(b-3)+' V96" class="thin" style="stroke:'+(slow?'var(--bad)':'var(--ink2)')+';stroke-width:'+(slow?2:1.2)+'"/><text x="'+((a+b)/2)+'" y="122" text-anchor="middle" class="m" style="font-size:12px;fill:'+(slow?'var(--bad)':'var(--ink2)')+'">'+(i+1)+'단 '+fx(d,1)+'</text>';});
+  s+='<text x="'+x0+'" y="144" class="dim" style="font-size:11.5px">검은 막대: 입력/출력 레지스터, 파란 막대: 파이프라인 레지스터</text>';
+  $('#p1svg').innerHTML=s;
+  $('#p1cuts').innerHTML=cuts.map((c,i)=>'<button data-i="'+i+'" aria-pressed="'+c+'">'+PB[i].n+' | '+PB[i+1].n+'</button>').join('');
+  $('#p1stats').innerHTML=[['단 수',r.S],['클럭 주기',fx(r.T,1)+' ns'],['f_max',fx(r.f,0)+' MHz'],['latency',r.S+'사이클 = '+fx(r.lat,1)+' ns'],['처리량',fx(r.f,0)+' M개/s'],['추가 FF',r.bits+'비트']]
+    .map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+  const base=evalCuts([0,0,0,0,0]);
+  const sp=r.f/base.f;
+  const m=$('#p1msg');
+  if(r.S===1){m.className='msg';m.innerHTML='파이프라인이 없습니다. 클럭 주기는 전체 지연 10 ns + 0.5 ns입니다.';}
+  else{const min=Math.min(...r.st);m.className=mx>2*min?'msg warn':'msg ok';
+    m.innerHTML='처리량 '+fx(sp,2)+'배, latency '+fx(base.lat,1)+' → '+fx(r.lat,1)+' ns.'+(mx>2*min?' 단마다 지연 차이가 큽니다. 가장 느린 단(빨간색)이 클럭을 정하므로 빠른 단은 시간을 놀립니다.':' 단 지연이 비교적 고르게 나뉘었습니다.');}
+  drawScatter(r);drawP2();
+}
+function drawScatter(cur){
+  const pts=[];for(let m=0;m<32;m++){const c=[0,1,2,3,4].map(i=>!!(m>>i&1));pts.push(Object.assign(evalCuts(c),{m}));}
+  const fx0=80,fx1=520,fy0=200,fy1=20,fmin=60,fmax=320,lmin=Math.floor(Math.min(...pts.map(p=>p.lat)))-2,lmax=Math.ceil(Math.max(...pts.map(p=>p.lat)))+2;
+  const X=f=>fx0+(f-fmin)/(fmax-fmin)*(fx1-fx0),Y=l=>fy0-(l-lmin)/(lmax-lmin)*(fy0-fy1);
+  let s='<path d="M'+fx0+','+fy1+' V'+fy0+' H'+fx1+'" class="thin"/>';
+  for(let f=100;f<=300;f+=50)s+='<text x="'+X(f)+'" y="'+(fy0+16)+'" text-anchor="middle" class="m dim" style="font-size:10.5px">'+f+'</text>';
+  for(let l=Math.ceil(lmin/4)*4;l<=lmax;l+=4)s+='<text x="'+(fx0-6)+'" y="'+(Y(l)+4)+'" text-anchor="end" class="m dim" style="font-size:10.5px">'+l+'</text>';
+  s+='<text x="'+fx1+'" y="'+(fy0-6)+'" text-anchor="end" class="dim" style="font-size:11px">처리량 (M개/s)</text><text x="'+(fx0+6)+'" y="'+(fy1+4)+'" class="dim" style="font-size:11px">latency (ns)</text>';
+  const key=c=>c.st.join(',');
+  pts.forEach(p=>{const on=key(p)===key(cur);s+='<circle cx="'+X(p.f)+'" cy="'+Y(p.lat)+'" r="'+(on?7:4)+'" style="fill:'+(on?'var(--accent)':'var(--sheet)')+';stroke:'+(on?'var(--accent)':'var(--ink2)')+';stroke-width:1.3"/>';});
+  $('#p1sc').innerHTML=s;
+}
+$('#p1svg').addEventListener('click',e=>{const g=e.target.closest('.cut');if(g){cuts[+g.dataset.i]=!cuts[+g.dataset.i];drawP1();}});
+$('#p1cuts').addEventListener('click',e=>{const b=e.target.closest('button');if(b){cuts[+b.dataset.i]=!cuts[+b.dataset.i];drawP1();}});
+
+let VIN=[1,1,1,0,1,1,0,0,1,1,1,1];
+function drawP2(){
+  const S=evalCuts(cuts).S,C=VIN.length+S+1;
+  const id=[];let n=0;VIN.forEach(v=>id.push(v?n++:-1));
+  const cell=(c,txt,col,extra)=>'<td'+(extra||'')+' style="'+(col?'background:'+col+';color:var(--onacc);':'')+'">'+txt+'</td>';
+  const pal=i=>'var(--p'+(i%8)+')';
+  let t='<table class="t" style="width:auto;font-family:var(--mono);font-size:12.5px;text-align:center"><tr><th>사이클</th>';
+  for(let c=0;c<C;c++)t+='<th style="text-align:center;padding:4px 6px">'+c+'</th>';t+='</tr>';
+  t+='<tr><th>입력 valid</th>';for(let c=0;c<C;c++)t+=c<VIN.length?'<td style="padding:2px"><button data-c="'+c+'" style="min-height:30px;padding:2px 9px;font-family:var(--mono)" aria-pressed="'+(VIN[c]?'true':'false')+'">'+VIN[c]+'</button></td>':'<td></td>';t+='</tr>';
+  for(let s=1;s<=S;s++){t+='<tr><th>'+s+'단</th>';for(let c=0;c<C;c++){const k=c-(s-1),i=k>=0&&k<VIN.length?id[k]:-1;t+=i>=0?cell(c,'d'+i,pal(i)):cell(c,'·');}t+='</tr>';}
+  t+='<tr><th>출력 valid</th>';let last=-1;
+  for(let c=0;c<C;c++){const k=c-S,i=k>=0&&k<VIN.length?id[k]:-1;if(i>=0)last=c;t+=i>=0?cell(c,'d'+i,pal(i)):cell(c,'0');}t+='</tr></table>';
+  $('#p2grid').innerHTML=t;
+  $('#p2stats').innerHTML='<div class="stat"><span class="k">넣은 데이터</span><span class="v">'+n+'개</span></div><div class="stat"><span class="k">입력→출력</span><span class="v">'+S+'사이클</span></div><div class="stat"><span class="k">마지막 결과</span><span class="v">'+(last<0?'—':last+'번 사이클')+'</span></div>';
+}
+$('#p2grid').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b){VIN[+b.dataset.c]^=1;drawP2();}});
+drawP1();
+
+(()=>{ // 실험 4-3
+  const C=14;
+  let V=[0,1,1,1,1,0,1,1,1,0,1,0,0,0],Rd=[1,1,0,0,1,1,1,0,1,1,1,1,0,1];
+  const lw=64,cw=44,rh=28;
+  function draw(){
+    const data=[],fire=[];let idx=0,viol=-1;
+    for(let c=0;c<C;c++){
+      data.push(V[c]?'D'+idx:null);
+      const f=V[c]&&Rd[c];fire.push(f?'✓':'');
+      if(c>0&&V[c-1]&&!(V[c-1]&&Rd[c-1])&&!V[c]&&viol<0)viol=c;
+      if(f)idx++;
+    }
+    const dv=data.map(x=>x===null?'-':x);
+    let ov='';
+    [[1,V],[2,Rd]].forEach(([r,arr])=>{for(let c=0;c<C;c++)ov+='<rect class="hs" data-r="'+r+'" data-c="'+c+'" x="'+(lw+c*cw)+'" y="'+(r*rh+3)+'" width="'+cw+'" height="'+(rh-2)+'" style="fill:transparent;cursor:pointer"/>';});
+    if(viol>=0)ov+='<rect x="'+(lw+viol*cw)+'" y="'+(rh+3)+'" width="'+cw+'" height="'+(rh-2)+'" style="fill:none;stroke:var(--bad);stroke-width:2"/>';
+    $('#h1wave').innerHTML=wave([{n:'clk',t:'clk'},{n:'valid',t:'b',v:V},{n:'ready',t:'b',v:Rd,col:'var(--p3)'},{n:'data',t:'v',v:dv},{n:'전송',t:'m',v:fire}],{cycles:C,cw,lw,rh,extra:ov});
+    $('#h1stats').innerHTML='<div class="stat"><span class="k">전송된 데이터</span><span class="v">'+idx+'개</span></div><div class="stat"><span class="k">valid인데 못 보낸 사이클</span><span class="v">'+V.filter((v,c)=>v&&!Rd[c]).length+'</span></div>';
+    const m=$('#h1msg');
+    if(viol>=0){m.className='msg bad';m.innerHTML=viol+'번 사이클: 아직 전송되지 않은 데이터가 있는데 valid를 내렸습니다. 규칙 위반입니다. 받는 쪽은 그 데이터를 영영 못 받을 수 있습니다.';}
+    else{m.className='msg';m.innerHTML='data는 전송이 일어난 다음 사이클에야 다음 값으로 바뀝니다. ready=0인 동안 보내는 쪽은 같은 데이터를 계속 들고 기다립니다.';}
+  }
+  $('#h1wave').addEventListener('click',e=>{const r=e.target.closest('.hs');if(!r)return;const c=+r.dataset.c;if(r.dataset.r==='1')V[c]^=1;else Rd[c]^=1;draw();});
+  draw();
+})();
+
+(()=>{ // 실험 4-4
+  const C=16,S=3;let pol='g';
+  const VI=[1,1,0,1,1,1,1,0,1,1,1,0,0,0,0,0],RO=[1,1,1,1,0,0,1,1,0,1,0,0,1,1,1,1];
+  function sim(p){
+    let st=Array(S).fill(-1),q=0,id=0,maxq=0,held=0,sent=0;
+    const R={q:[],inr:[],st:[...Array(S)].map(()=>[]),hold:[...Array(S)].map(()=>[]),fire:[]};
+    for(let c=0;c<C;c++){
+      if(VI[c])q++;maxq=Math.max(maxq,q);
+      const rdy=Array(S).fill(false),leave=Array(S).fill(false);
+      if(p==='g'){const stall=st[S-1]>=0&&!RO[c];for(let i=0;i<S;i++){rdy[i]=!stall;leave[i]=st[i]>=0&&!stall;}}
+      else{let nx=!!RO[c];for(let i=S-1;i>=0;i--){leave[i]=st[i]>=0&&nx;rdy[i]=st[i]<0||nx;nx=rdy[i];}}
+      const acc=q>0&&rdy[0];
+      R.q.push(q);R.inr.push(rdy[0]?1:0);
+      for(let i=0;i<S;i++){R.st[i].push(st[i]);const h=st[i]>=0&&!leave[i];R.hold[i].push(h);if(h)held++;}
+      const f=leave[S-1];R.fire.push(f);if(f)sent++;
+      const ns=st.slice();
+      for(let i=S-1;i>=1;i--)if(rdy[i])ns[i]=leave[i-1]?st[i-1]:-1;
+      if(rdy[0])ns[0]=acc?id++:-1;
+      if(acc)q--;
+      st=ns;
+    }
+    return {R,maxq,held,sent};
+  }
+  function draw(){
+    const r=sim(pol),o=sim(pol==='g'?'c':'g'),R=r.R;
+    const pal=i=>'var(--p'+(i%8)+')';
+    const btn=(arr,c,key)=>'<td style="padding:2px"><button data-k="'+key+'" data-c="'+c+'" style="min-height:30px;padding:2px 8px;font-family:var(--mono)" aria-pressed="'+(arr[c]?'true':'false')+'">'+arr[c]+'</button></td>';
+    let t='<table class="t" style="width:auto;font-family:var(--mono);font-size:12.5px;text-align:center"><tr><th>사이클</th>';
+    for(let c=0;c<C;c++)t+='<th style="text-align:center;padding:4px 6px">'+c+'</th>';t+='</tr>';
+    t+='<tr><th>새 데이터 도착</th>';for(let c=0;c<C;c++)t+=btn(VI,c,'v');t+='</tr>';
+    t+='<tr><th>보내는 쪽 대기</th>';for(let c=0;c<C;c++)t+='<td>'+(R.q[c]||'·')+'</td>';t+='</tr>';
+    t+='<tr><th>in_ready</th>';for(let c=0;c<C;c++)t+='<td style="'+(R.inr[c]?'':'color:var(--bad);font-weight:600')+'">'+R.inr[c]+'</td>';t+='</tr>';
+    for(let i=0;i<S;i++){t+='<tr><th>'+(i+1)+'단</th>';for(let c=0;c<C;c++){const v=R.st[i][c],h=R.hold[i][c];
+      t+=v>=0?'<td style="background:'+pal(v)+';color:var(--onacc);'+(h?'box-shadow:inset 0 0 0 3px var(--warn);':'')+'">d'+v+'</td>':'<td style="color:var(--ink2)">·</td>';}t+='</tr>';}
+    t+='<tr><th>out_ready</th>';for(let c=0;c<C;c++)t+=btn(RO,c,'r');t+='</tr>';
+    t+='<tr><th>전송</th>';for(let c=0;c<C;c++)t+='<td style="color:var(--ok);font-weight:600">'+(R.fire[c]?'✓':'')+'</td>';t+='</tr></table>';
+    $('#stgrid').innerHTML=t;
+    $('#ststats').innerHTML=[['내보낸 데이터',r.sent+'개'],['보내는 쪽 최대 대기',r.maxq+'개'],['멈춰 있던 단·사이클',r.held]].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const m=$('#stmsg');
+    m.className='msg';
+    m.innerHTML='같은 입력에서 '+(pol==='g'?'빈 칸 당기기로 바꾸면':'전체 멈춤으로 바꾸면')+' 내보낸 데이터 '+o.sent+'개, 보내는 쪽 최대 대기 '+o.maxq+'개입니다. '+(pol==='g'?'전체 멈춤은 앞쪽 빈 칸까지 함께 멈추므로 보내는 쪽에 데이터가 더 쌓입니다.':'빈 칸 당기기는 멈춰 있는 동안에도 앞쪽 빈 칸을 메우며 계속 받아들입니다.');
+  }
+  segBind('st_pol',v=>{pol=v;draw();});
+  $('#stgrid').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b)return;const c=+b.dataset.c;if(b.dataset.k==='v')VI[c]^=1;else RO[c]^=1;draw();});
+  draw();
+})();
+
+(()=>{ // 실험 4-5
+  let L=2,K='1';segBind('fb_l',v=>{L=+v;draw();});segBind('fb_k',v=>{K=v;draw();});
+  function draw(){
+    const N=10,k=K==='L'?L:1,st=[];for(let i=0;i<N;i++)st.push(k===1?i*L:i);
+    const merge=k>1?Math.ceil(Math.log2(k))*L:0,end=st[N-1]+L+merge,cw=Math.max(10,Math.min(26,520/end)),lw=60,rh=20,W=lw+end*cw+10,H=N*rh+46;
+    let s='<svg class="sch" style="min-width:'+Math.min(W,480)+'px;max-width:'+W+'px" viewBox="0 0 '+W+' '+H+'">';
+    for(let t=0;t<=end;t++)s+='<line x1="'+(lw+t*cw)+'" y1="14" x2="'+(lw+t*cw)+'" y2="'+(16+N*rh)+'" style="stroke:var(--grid)"/>'+(t%2===0&&t<end?'<text x="'+(lw+t*cw+cw/2)+'" y="11" text-anchor="middle" class="m dim" style="font-size:9.5px">'+t+'</text>':'');
+    for(let i=0;i<N;i++){const y=16+i*rh,acc=i%k;s+='<text x="'+(lw-6)+'" y="'+(y+14)+'" text-anchor="end" class="m dim" style="font-size:10.5px">x'+i+'</text>';
+      for(let j=0;j<L;j++)s+='<rect x="'+(lw+(st[i]+j)*cw+1)+'" y="'+(y+2)+'" width="'+(cw-2)+'" height="'+(rh-4)+'" rx="2" style="fill:var(--p'+(acc%8)+');opacity:'+(1-j*0.18)+'"/>';
+      if(k===1&&i>0)s+='<path d="M'+(lw+(st[i-1]+L)*cw)+' '+(y-6)+' L'+(lw+st[i]*cw+2)+' '+(y+6)+'" style="stroke:var(--bad);stroke-width:1.3;fill:none"/>';}
+    if(merge)s+='<rect x="'+(lw+(st[N-1]+L)*cw+1)+'" y="'+(16+(N-1)*rh+2)+'" width="'+(merge*cw-2)+'" height="'+(rh-4)+'" rx="2" style="fill:var(--ink2)"/><text x="'+(lw+(st[N-1]+L+merge/2)*cw)+'" y="'+(16+N*rh+14)+'" text-anchor="middle" class="m dim" style="font-size:10px">부분합 합치기</text>';
+    s+='<text x="'+lw+'" y="'+(H-6)+'" class="dim" style="font-size:11px">색 = 어느 누산기로 가는지, 막대 = 덧셈기 '+L+'단을 지나는 시간</text>';
+    $('#fbsvg').innerHTML=s+'</svg>';
+    const ii=k===1?L:1;
+    $('#fbstats').innerHTML=[['받아들이는 간격',ii+'사이클'],['입력 10개 끝',end+'사이클'],['누산기',k+'개']].map(([a,b])=>'<div class="stat"><span class="k">'+a+'</span><span class="v">'+b+'</span></div>').join('');
+    const m=$('#fbmsg');
+    if(k===1&&L>1){m.className='msg warn';m.innerHTML='빨간 선은 “앞 덧셈이 끝나야 다음 덧셈 시작”이라는 되먹임입니다. 덧셈기를 '+L+'단으로 쪼개 클럭은 빨라졌지만, 입력은 '+L+'사이클에 하나씩만 받습니다.';}
+    else if(k>1){m.className='msg ok';m.innerHTML='누산기 '+k+'개가 입력을 번갈아 받으므로 매 사이클 하나씩 받습니다. 대신 마지막에 부분합을 합치는 시간과 누산기 레지스터가 더 듭니다.';}
+    else{m.className='msg';m.innerHTML='덧셈기가 1단이면 되먹임이 있어도 매 사이클 받을 수 있습니다. 대신 덧셈 전체가 한 사이클 안에 끝나야 하므로 클럭을 올리기 어렵습니다.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 4-6
+  const C=14,VI=[1,1,1,1,1,1,0,1,1,1,1,0,0,0],RO=[1,1,1,0,0,1,1,0,1,1,1,1,1,1];let md=1;
+  function sim(md){
+    let q=0,id=0,main=-1,skid=-1,sent=0,maxq=0;const R={q:[],inr:[],main:[],skid:[],fire:[]};
+    for(let c=0;c<C;c++){
+      if(VI[c])q++;maxq=Math.max(maxq,q);
+      const of=main>=0&&RO[c],inr=md?(skid<0?1:0):((main<0||RO[c])?1:0),inf=q>0&&inr;
+      R.q.push(q);R.inr.push(inr);R.main.push(main);R.skid.push(skid);R.fire.push(of);if(of)sent++;
+      const nw=inf?id++:-1;if(inf)q--;
+      if(md){if(main<0||of){main=skid>=0?skid:nw;skid=-1;}else if(inf)skid=nw;}
+      else{if(main<0||of)main=nw;}
+    }
+    return {R,sent,maxq};
+  }
+  function draw(){
+    const r=sim(md),o=sim(1-md),R=r.R,pal=i=>'var(--p'+(i%8)+')';
+    const btn=(a,c,k)=>'<td style="padding:2px"><button data-k="'+k+'" data-c="'+c+'" style="min-height:30px;padding:2px 8px;font-family:var(--mono)" aria-pressed="'+(a[c]?'true':'false')+'">'+a[c]+'</button></td>';
+    const cell=v=>v>=0?'<td style="background:'+pal(v)+';color:var(--onacc)">d'+v+'</td>':'<td style="color:var(--ink2)">·</td>';
+    let t='<table class="t" style="width:auto;font-family:var(--mono);font-size:12.5px;text-align:center"><tr><th>사이클</th>';for(let c=0;c<C;c++)t+='<th style="text-align:center;padding:4px 6px">'+c+'</th>';t+='</tr>';
+    t+='<tr><th>새 데이터 도착</th>';for(let c=0;c<C;c++)t+=btn(VI,c,'v');t+='</tr>';
+    t+='<tr><th>보내는 쪽 대기</th>';for(let c=0;c<C;c++)t+='<td>'+(R.q[c]||'·')+'</td>';t+='</tr>';
+    t+='<tr><th>in_ready</th>';for(let c=0;c<C;c++)t+='<td style="font-weight:600;color:'+(md?'var(--ok)':'var(--accent)')+'">'+R.inr[c]+'</td>';t+='</tr>';
+    t+='<tr><th>본 칸</th>';for(let c=0;c<C;c++)t+=cell(R.main[c]);t+='</tr>';
+    if(md){t+='<tr><th>여분 칸</th>';for(let c=0;c<C;c++)t+=cell(R.skid[c]);t+='</tr>';}
+    t+='<tr><th>out_ready</th>';for(let c=0;c<C;c++)t+=btn(RO,c,'r');t+='</tr>';
+    t+='<tr><th>전송</th>';for(let c=0;c<C;c++)t+='<td style="color:var(--ok);font-weight:600">'+(R.fire[c]?'✓':'')+'</td>';t+='</tr></table>';
+    $('#skgrid').innerHTML=t;
+    $('#skstats').innerHTML=[['내보낸 데이터',r.sent+'개'],['보내는 쪽 최대 대기',r.maxq+'개'],['in_ready를 정하는 것',md?'레지스터':'out_ready (조합)']].map(([a,b])=>'<div class="stat"><span class="k">'+a+'</span><span class="v">'+b+'</span></div>').join('');
+    $('#skmsg').innerHTML=md?'out_ready가 0이 된 사이클에도 in_ready는 이미 1이라 데이터가 하나 더 들어올 수 있고, 그 데이터는 여분 칸이 받습니다. 어떤 데이터도 잃지 않으면서 out_ready와 in_ready 사이에 조합 경로가 없습니다. (한 칸 버퍼로 바꾸면 내보낸 데이터 '+o.sent+'개)':'in_ready가 out_ready를 그대로 따라가는 조합 경로입니다. 처리량은 같거나 비슷하지만, 이런 단이 여러 개 이어지면 ready 경로가 길어집니다. (스키드 버퍼로 바꾸면 내보낸 데이터 '+o.sent+'개)';
+  }
+  segBind('sk_m',v=>{md=+v;draw();});
+  $('#skgrid').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b)return;const c=+b.dataset.c;if(b.dataset.k==='v')VI[c]^=1;else RO[c]^=1;draw();});
+  draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'5 ns짜리 조합 회로를 지연이 같은 5단으로 나눴습니다. 레지스터 비용이 0.5 ns이면 첫 결과가 나올 때까지 걸리는 시간은?',o:['1 ns','5.5 ns','7.5 ns','25 ns'],a:2,e:'맞습니다. 주기는 1 + 0.5 = 1.5 ns, 5단이므로 7.5 ns입니다. 원래(5.5 ns)보다 latency는 늘었지만 처리량은 약 3.7배가 됩니다.'},
+  {q:'세 단의 지연이 4 ns, 1 ns, 1 ns입니다. 클럭 주기를 정하는 것은?',o:['평균 2 ns','가장 느린 4 ns 단','합 6 ns'],a:1,e:'맞습니다. 가장 느린 단에 맞춰야 하므로 나머지 두 단은 매 사이클 3 ns씩 놉니다. 단을 고르게 나누는 게 중요합니다.'},
+  {q:'2단 곱셈-덧셈 코드에서 <code>c1 &lt;= c</code>를 빼고 <code>y &lt;= p1 + c</code>로 쓰면?',o:['결과가 같다','한 사이클 늦게 들어온 c가 더해져 틀린 값이 나온다','합성이 안 된다'],a:1,e:'맞습니다. p1은 이전 사이클 입력으로 만든 값이므로 c도 같은 사이클의 값을 써야 합니다.'},
+  {q:'valid/ready 핸드셰이크에서 전송이 일어나는 조건은?',o:['valid가 올라가는 순간','ready가 올라가는 순간','클럭 엣지에서 valid=1이고 ready=1일 때'],a:2,e:'맞습니다. 두 신호가 같은 엣지에서 모두 1일 때만 데이터가 넘어갑니다.'},
+  {q:'빈 칸 당기기 방식이 전체 멈춤보다 많이 받아들이는 대신 생기는 문제는?',o:['데이터 순서가 뒤바뀐다','ready가 마지막 단에서 첫 단까지 한 사이클 안에 거꾸로 전달되어 긴 조합 경로가 생긴다','레지스터가 두 배로 필요하다'],a:1,e:'맞습니다. 단 수에 비례하는 조합 경로가 생겨 클럭을 깎아 먹습니다. 스키드 버퍼로 이 경로를 끊습니다.'},
+  {q:'덧셈기를 2단 파이프라인으로 만든 누산기 <code>acc &lt;= acc + x</code>는 부분합을 쓰지 않으면 몇 사이클에 입력 하나를 받나요?',o:['1사이클','2사이클','4사이클'],a:1,e:'맞습니다. 다음 덧셈이 앞 덧셈의 결과를 기다려야 하므로, 되먹임 고리의 사이클 수(2)마다 하나씩 받습니다.'},
+  {q:'스키드 버퍼의 가장 중요한 효과는?',o:['데이터를 압축한다','in_ready를 레지스터에서 바로 내보내 out_ready와의 조합 경로를 끊는다','클럭 도메인을 바꿔 준다'],a:1,e:'맞습니다. 여분 칸 하나 덕분에 ready를 한 사이클 늦게 알려도 데이터를 잃지 않습니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch03-fsmd.html"><span>이전</span>3장. FSMD: 컨트롤러와 데이터패스</a><a class="nx" href="ch05-sync-async.html"><span>다음</span>5장. 동기와 비동기</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li class="on">4장. 파이프라이닝</li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

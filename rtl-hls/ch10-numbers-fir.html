@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>10장. 수 표현과 DSP 예제 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">10장</span><span class="dots" aria-label="12장 중 10장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L181.8,58 L185.8,40 L426.8,40 L430.8,58 L671.8,58 L675.8,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><div class="num">10장</div><h1>수 표현과 DSP 예제</h1><p class="lede">2의 보수와 고정소수점, 곱셈 없이 삼각함수를 구하는 CORDIC, 같은 FIR 필터를 RTL과 HLS로 만든 비교까지 다룹니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">10.1</span>2의 보수와 고정소수점</h2>
+<p>하드웨어의 수는 결국 비트 묶음입니다. 같은 8비트 <code>11110100</code>도 어떻게 읽기로 약속하느냐에 따라 244가 되기도, −12가 되기도, −0.75가 되기도 합니다.</p>
+<ul>
+<li><b>부호 없는 정수</b>: 비트마다 128, 64, …, 1의 무게를 더합니다.</li>
+<li><b>2의 보수</b>: 맨 위 비트의 무게만 −128로 바꿉니다. 덧셈 회로를 그대로 쓸 수 있어서 거의 모든 하드웨어가 이 방식을 씁니다.</li>
+<li><b>고정소수점</b>: 2의 보수 정수를 2<sup>f</sup>로 나눈 값으로 읽습니다. 소수점 위치(f)는 하드웨어에 따로 저장되지 않고, 설계자가 정한 약속일 뿐입니다. 그래서 덧셈, 곱셈 회로는 정수와 똑같습니다.</li>
+</ul>
+<p>HLS에서는 <code>ap_fixed&lt;W, I&gt;</code>로 씁니다. W는 전체 비트, I는 소수점 위쪽 비트 수(부호 포함)입니다. 실수를 고정소수점에 넣을 때 생기는 두 가지 문제, 즉 표현할 수 없는 자리를 어떻게 버릴지(반올림)와 범위를 넘으면 어떻게 할지(넘침)도 타입에 정해 둡니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-1</b><span>비트를 읽는 세 가지 방법</span></figcaption>
+<div class="body">
+<p class="hint">비트를 눌러 바꾸고, 소수점 위치를 옮겨 보세요.</p>
+<div class="ctrl" id="nb_bits"></div>
+<label class="sl"><span>소수부 비트 수 f</span><input type="range" id="nb_f" min="0" max="7" value="4"><output id="nb_fv"></output></label>
+<div class="stats" id="nb_stats"></div>
+<div class="sub">실수 하나를 이 형식에 넣으면</div>
+<label class="sl"><span>넣을 실수</span><input type="range" id="nb_x" min="-10" max="10" step="0.01" value="2.83"><output id="nb_xv"></output></label>
+<div class="ctrl"><span class="lbl">반올림</span><div class="seg" id="nb_r"><button data-v="trn" aria-pressed="true">버림 (AP_TRN)</button><button data-v="rnd" aria-pressed="false">반올림 (AP_RND)</button></div>
+<span class="lbl">넘침</span><div class="seg" id="nb_o"><button data-v="wrap" aria-pressed="true">감기 (AP_WRAP)</button><button data-v="sat" aria-pressed="false">포화 (AP_SAT)</button></div></div>
+<pre class="code" id="nb_code" data-manual></pre>
+<div class="stats" id="nb_q"></div>
+<p class="msg" id="nb_msg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>기본값(버림, 감기)은 회로가 가장 작지만, 범위를 넘으면 큰 양수가 갑자기 음수가 됩니다. 영상이나 오디오처럼 넘침이 눈에 띄는 곳에서는 포화를 씁니다. 대신 비교기와 MUX가 조금 더 듭니다. 곱셈하면 비트가 두 배로, 덧셈하면 한 비트 늘어난다는 것(6.5)은 고정소수점에서도 같습니다. 소수부 비트 수는 곱하면 더해지고, 더할 때는 큰 쪽에 맞춥니다.</p>
+<p>부동소수점(<code>float</code>)도 합성할 수 있지만, 덧셈 하나에 수백 LUT와 몇 사이클의 지연이 듭니다(7장의 덧셈 4사이클). 값의 범위를 알 수 있으면 고정소수점이 훨씬 작고 빠릅니다.</p>
+
+<h2><span class="sec">10.2</span>CORDIC: 곱셈 없이 삼각함수 구하기</h2>
+<p>사인과 코사인을 하드웨어로 구하는 고전적인 방법이 CORDIC입니다. 벡터 (1, 0)을 목표 각도까지 회전시키는데, 아무 각도나 돌리는 대신 tan이 1, 1/2, 1/4, 1/8, …인 각도(45°, 26.6°, 14.0°, 7.1°, …)만큼만 왼쪽 또는 오른쪽으로 돌립니다. 이런 각도로 돌리는 계산은 곱셈 없이 <b>시프트와 덧셈</b>만으로 됩니다.</p>
+<div class="math">x' = x − d·y·2<sup>−i</sup>,　y' = y + d·x·2<sup>−i</sup>,　z' = z − d·atan(2<sup>−i</sup>)　(d = z의 부호)</div>
+<p>z는 아직 남은 각도입니다. 매번 남은 각도 쪽으로 돌리다 보면 z는 0에 가까워지고, 벡터는 목표 각도를 가리키게 됩니다. 돌릴 때마다 벡터 길이가 조금씩 늘어나지만, 반복 횟수가 정해지면 늘어나는 비율도 정해지므로 처음 벡터를 그만큼 줄여서(약 0.6073) 시작합니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-2</b><span>CORDIC 반복 따라가기</span></figcaption>
+<div class="body">
+<label class="sl"><span>목표 각도</span><input type="range" id="cd_t" min="-90" max="90" step="1" value="57"><output id="cd_tv"></output></label>
+<label class="sl"><span>반복 횟수</span><input type="range" id="cd_n" min="1" max="16" value="6"><output id="cd_nv"></output></label>
+<label class="sl"><span>고정소수점 소수부</span><input type="range" id="cd_f" min="4" max="20" value="12"><output id="cd_fv"></output></label>
+<div class="g2">
+<div class="scroll"><svg id="cdsvg" class="sch" style="min-width:260px" viewBox="0 0 250 230" role="img" aria-label="CORDIC 회전"></svg></div>
+<div><div class="stats" id="cdstats"></div><div class="scroll"><svg id="cderr" class="sch" style="min-width:260px" viewBox="0 0 280 140" role="img" aria-label="반복 횟수와 오차"></svg></div></div>
+</div>
+<div class="scroll"><table class="t" id="cdtab" style="font-family:var(--mono);font-size:12.5px"></table></div>
+<p class="msg" id="cdmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>반복 한 번에 비트 하나 정도의 정밀도가 늘어나지만, 고정소수점의 소수부 비트보다 더 정밀해질 수는 없습니다(오차 그래프가 바닥에서 평평해지는 지점). 반복 횟수와 비트 폭을 함께 정해야 하는 이유입니다. 하드웨어로는 반복을 모두 펼쳐 단마다 레지스터를 둔 파이프라인(매 사이클 결과 하나)으로 만들 수도 있고, 한 단을 N번 돌려 쓰는 작은 회로(N사이클에 결과 하나)로 만들 수도 있습니다. 7장의 UNROLL과 PIPELINE이 바로 이 선택입니다.</p>
+
+<h2><span class="sec">10.3</span>FIR 필터</h2>
+<p>FIR(Finite Impulse Response) 필터는 최근 입력 몇 개에 계수를 곱해 더하는, 디지털 신호 처리에서 가장 흔한 회로입니다. 이 장에서는 계수가 h = [1, 3, 3, 1]인 4탭 필터를 씁니다. 신호를 부드럽게 만드는 저역 통과 필터입니다.</p>
+<div class="math">y[n] = h[0]·x[n] + h[1]·x[n−1] + h[2]·x[n−2] + h[3]·x[n−3]</div>
+<p>지금까지 배운 것을 모두 써서 같은 필터를 세 가지로 만들어 비교합니다.</p>
+<ul>
+<li><b>A. HLS, 지시어 없음</b>: C 코드를 그대로 합성.</li>
+<li><b>B. HLS, 지시어 추가</b>: 함수 전체에 PIPELINE II=1, 시프트 배열에 ARRAY_PARTITION complete.</li>
+<li><b>C. RTL 직접 설계</b>: 전치형(transposed) 구조로 손으로 짠 Verilog.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-3</b><span>세 가지 구현 들여다보기</span></figcaption>
+<div class="body">
+<div class="seg" id="f_sel"><button data-v="A" aria-pressed="true">A. HLS 기본</button><button data-v="B" aria-pressed="false">B. HLS 지시어</button><button data-v="C" aria-pressed="false">C. RTL 전치형</button></div>
+<div class="g2" style="margin-top:12px">
+<pre class="code" id="fcode" data-manual></pre>
+<div><div class="scroll"><svg id="fhw" class="sch" style="min-width:400px" viewBox="0 0 560 230" role="img" aria-label="FIR 구조"></svg></div>
+<p class="hint" id="fdesc"></p></div>
+</div>
+</div>
+</figure>
+
+<div class="prose">
+<p>A는 C 코드의 루프를 그대로 따라가서 곱셈기 하나를 네 번 돌려 씁니다. B는 함수에 PIPELINE을 걸면 도구가 안쪽 루프를 모두 펼치고, 배열을 레지스터로 쪼개 네 곱셈을 동시에 합니다. 합하는 순서는 도구가 정하고, 중간에 파이프라인 레지스터도 알아서 넣습니다. C는 곱한 값을 레지스터 사슬을 따라 더해 나가는 구조라서, 어느 레지스터 사이에도 곱셈 하나와 덧셈 하나밖에 없습니다.</p>
+<div class="note"><b>계수가 상수라면</b>
+3·x는 (x &lt;&lt; 1) + x로 바꿀 수 있습니다. 상수 곱셈은 합성기와 HLS 도구 모두 시프트와 덧셈으로 바꾸는 경우가 많아서, 실제로는 곱셈기(DSP)가 하나도 쓰이지 않을 수도 있습니다.</div>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-4</b><span>같은 입력, 다른 박자</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">입력 신호</span><div class="seg" id="f_sig"><button data-v="imp" aria-pressed="true">임펄스</button><button data-v="step" aria-pressed="false">계단</button><button data-v="sq" aria-pressed="false">사각파</button><button data-v="rnd" aria-pressed="false">무작위</button></div></div>
+<p class="hint">B와 C는 매 사이클 입력을 받습니다. A는 한 샘플을 처리하는 데 9사이클이 걸리므로 그동안 입력을 받지 못합니다. 모두 같은 값 y를 계산하지만 나오는 시점이 다릅니다.</p>
+<div class="scroll" id="fwave"></div>
+<table class="t" style="margin-top:12px">
+<tr><th></th><th>A. HLS 기본</th><th>B. HLS 지시어</th><th>C. RTL 전치형</th></tr>
+<tr><td>II (샘플 간격)</td><td class="m">9</td><td class="m">1</td><td class="m">1</td></tr>
+<tr><td>latency</td><td class="m">9</td><td class="m">3</td><td class="m">1</td></tr>
+<tr><td>곱셈기</td><td class="m">1</td><td class="m">4</td><td class="m">4</td></tr>
+<tr><td>레지스터 사이 최장 경로</td><td>곱셈 1</td><td>곱셈 1 또는 덧셈 1</td><td>곱셈 1 + 덧셈 1</td></tr>
+<tr><td>설계자가 정하는 것</td><td>알고리즘</td><td>알고리즘 + 지시어</td><td>사이클마다 모든 레지스터</td></tr>
+</table>
+<p class="assume"><b>가정</b>수치는 이 강의의 단순화된 모델입니다. 실제 HLS 도구의 결과는 목표 클럭과 연산 지연 설정에 따라 달라집니다.</p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">10.4</span>고정소수점 FIR: 비트는 얼마나 필요한가</h2>
+<p>앞에서는 계수를 정수 [1, 3, 3, 1]로 골라 문제를 피했습니다. 실제 필터의 계수는 0.07, 0.24 같은 소수이고, 입력도 ADC에서 나온 몇 비트짜리 값입니다. 이때 정해야 할 것이 셋입니다.</p>
+<ul>
+<li><b>계수 비트 수</b>: 적으면 계수가 반올림되어 필터 모양 자체가 조금 변합니다.</li>
+<li><b>누산기 비트 수</b>: 곱 하나가 (입력 비트 + 계수 비트)이고, N개를 더하면 log<sub>2</sub>N비트가 더 늘 수 있습니다. 이보다 작으면 넘칩니다.</li>
+<li><b>출력 비트 수</b>: 누산기를 다음 단으로 넘기기 전에 잘라 냅니다. 자른 만큼 잡음이 생깁니다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-5</b><span>5탭 저역 통과 필터를 고정소수점으로</span></figcaption>
+<div class="body">
+<p class="hint">계수는 [0.07, 0.24, 0.38, 0.24, 0.07], 입력은 사인파에 잡음을 섞은 값(−1~1)입니다. 회색이 실수로 계산한 정답, 파랑이 고정소수점 결과입니다.</p>
+<label class="sl"><span>입력 비트</span><input type="range" id="fx_i" min="3" max="16" value="8"><output id="fx_iv"></output></label>
+<label class="sl"><span>계수 비트</span><input type="range" id="fx_c" min="3" max="16" value="6"><output id="fx_cv"></output></label>
+<label class="sl"><span>출력 비트</span><input type="range" id="fx_o" min="3" max="20" value="8"><output id="fx_ov"></output></label>
+<div class="scroll"><svg id="fxsvg" class="sch" viewBox="0 0 560 150" role="img" aria-label="정답과 고정소수점 결과"></svg></div>
+<div class="stats" id="fxstats"></div>
+<div class="scroll"><table class="t" id="fxtab" style="font-family:var(--mono);font-size:12.5px;width:auto"></table></div>
+<p class="msg" id="fxmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>대략 비트 하나를 늘릴 때마다 신호 대 잡음비(SNR)가 6 dB씩 좋아집니다. 가장 적은 쪽 비트가 전체 품질을 정하므로, 한쪽만 크게 늘리는 것은 낭비입니다.</p>
+
+<h2><span class="sec">10.5</span>대칭 계수 접기</h2>
+<p>저역 통과 필터처럼 많은 FIR 필터는 계수가 좌우 대칭입니다(h[0]=h[3], h[1]=h[2]). 그러면 같은 계수를 곱할 두 입력을 먼저 더하고 한 번만 곱하면 됩니다.</p>
+<pre class="code">
+// 곱셈 4번
+acc = h[0]*x[0] + h[1]*x[1] + h[1]*x[2] + h[0]*x[3];
+// 대칭을 이용하면 곱셈 2번
+acc = h[0]*(x[0] + x[3]) + h[1]*(x[1] + x[2]);
+</pre>
+<div class="scroll"><svg class="sch" viewBox="0 0 560 150" role="img" aria-label="대칭 접기 구조">
+<defs><marker id="ah10s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>
+<text x="10" y="34" class="m">x[0]</text><text x="10" y="64" class="m">x[3]</text><text x="10" y="104" class="m">x[1]</text><text x="10" y="134" class="m">x[2]</text>
+<path d="M44 30 H90 V44 H104 M44 60 H90 V50 H104 M44 100 H90 V114 H104 M44 130 H90 V120 H104" class="thin" marker-end="url(#ah10s)"/>
+<circle cx="120" cy="47" r="15" style="fill:var(--p2)"/><text x="120" y="52" text-anchor="middle" style="fill:var(--onacc);font-size:15px">+</text>
+<circle cx="120" cy="117" r="15" style="fill:var(--p2)"/><text x="120" y="122" text-anchor="middle" style="fill:var(--onacc);font-size:15px">+</text>
+<path d="M135 47 H178 M135 117 H178" class="thin" marker-end="url(#ah10s)"/>
+<rect x="180" y="33" width="64" height="28" rx="3" style="fill:var(--p1)"/><text x="212" y="52" text-anchor="middle" style="fill:var(--onacc);font-size:12.5px">× h[0]</text>
+<rect x="180" y="103" width="64" height="28" rx="3" style="fill:var(--p1)"/><text x="212" y="122" text-anchor="middle" style="fill:var(--onacc);font-size:12.5px">× h[1]</text>
+<path d="M244 47 H290 V74 H304 M244 117 H290 V90 H304" class="thin" marker-end="url(#ah10s)"/>
+<circle cx="320" cy="82" r="15" style="fill:var(--p2)"/><text x="320" y="87" text-anchor="middle" style="fill:var(--onacc);font-size:15px">+</text>
+<path d="M335 82 H380" class="thin" marker-end="url(#ah10s)"/><text x="388" y="86" class="m">y</text>
+<rect x="96" y="20" width="160" height="56" rx="6" style="fill:none;stroke:var(--accent);stroke-dasharray:4 3"/><text x="262" y="20" class="m" style="font-size:10.5px;fill:var(--accent)">DSP 블록 하나 (pre-adder + 곱셈기)</text>
+</svg></div>
+<p>FPGA의 DSP 블록에는 곱셈기 앞에 덧셈기(pre-adder)가 들어 있어서, 점선 상자 하나가 DSP 하나에 그대로 들어갑니다. 대칭 N탭 필터는 곱셈기 N/2개로 됩니다. HLS 도구가 이 모양을 알아서 찾기도 하지만, 코드를 위처럼 쓰면 확실합니다.</p>
+
+<h2><span class="sec">10.6</span>DFT는 행렬-벡터 곱이다</h2>
+<p>이산 푸리에 변환(DFT)은 신호 N개를 주파수 성분 N개로 바꿉니다. 식을 보면 정해진 계수(회전 인자) 행렬과 입력 벡터의 곱입니다.</p>
+<div class="math">X[k] = Σ<sub>n</sub> x[n] · W<sup>kn</sup>,　W = e<sup>−j2π/N</sup>　→　X = W · x (N×N 행렬 × 벡터)</div>
+<p>그래서 DFT를 HLS로 옮기는 일은 7.5의 중첩 루프 행렬-벡터 곱, 8장의 배열 분할(계수 표를 행과 열 중 어느 방향으로 쪼갤지), 11장의 시스톨릭 배열과 똑같은 고민이 됩니다(책 4장). 곱셈은 N²번이고, 9.4의 FFT는 같은 결과를 N log<sub>2</sub>N번으로 얻는 재구성입니다.</p>
+<p>다른 점은 값이 복소수라는 것입니다. 복소수 곱 (a+jb)(c+jd) = (ac−bd) + j(ad+bc)는 그대로 하면 곱셈 4번, 덧셈 2번입니다. 순서를 바꾸면 곱셈 3번, 덧셈 5번으로 됩니다. 곱셈기(DSP)가 덧셈기보다 훨씬 귀하므로 흔히 쓰는 기법입니다(책 2.11).</p>
+<pre class="code">
+k1 = c * (a + b);
+k2 = a * (d - c);
+k3 = b * (c + d);
+re = k1 - k3;          // = ac - bd
+im = k1 + k2;          // = ad + bc
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 10-6</b><span>복소수 곱셈 4번 vs 3번</span></figcaption>
+<div class="body">
+<label class="sl"><span>a (실수부)</span><input type="range" id="cx_a" min="-9" max="9" value="3"><output id="cx_av"></output></label>
+<label class="sl"><span>b (허수부)</span><input type="range" id="cx_b" min="-9" max="9" value="2"><output id="cx_bv"></output></label>
+<label class="sl"><span>c (실수부)</span><input type="range" id="cx_c" min="-9" max="9" value="-1"><output id="cx_cv"></output></label>
+<label class="sl"><span>d (허수부)</span><input type="range" id="cx_d" min="-9" max="9" value="4"><output id="cx_dv"></output></label>
+<div class="stats" id="cxstats"></div>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">10.7</span>그래서 언제 무엇을 쓰나</h2>
+<p>RTL은 사이클과 레지스터를 하나하나 정할 수 있어서, 가장 작고 빠른 회로를 만들 수 있습니다. 대신 알고리즘을 조금만 바꿔도 코드를 크게 고쳐야 합니다. HLS는 알고리즘을 C로 빠르게 바꿔 보고, 지시어만 바꿔서 여러 설계(설계 공간)를 탐색하기 좋습니다. 대신 결과가 원하는 대로 나오게 하려면, 도구가 어떤 하드웨어를 만들지 머릿속에 그릴 수 있어야 합니다.</p>
+<p>결국 두 방식은 경쟁 관계가 아닙니다. 이 강의에서 배운 레지스터, 타이밍, FSMD, 파이프라인, 핸드셰이크는 HLS 리포트를 읽고 지시어를 고를 때 그대로 쓰는 지식입니다.</p>
+
+<h3>전체 정리</h3>
+<table class="t">
+<tr><th>개념</th><th>장</th><th>HLS에서 다시 만나는 곳</th></tr>
+<tr><td>레지스터와 조합 논리, <code>&lt;=</code></td><td class="m">1</td><td>변수가 레지스터가 되는지 여부</td></tr>
+<tr><td>setup, 크리티컬 패스</td><td class="m">2</td><td>목표 클럭과 연산 체이닝, 타이밍 리포트</td></tr>
+<tr><td>FSMD, major/minor FSM</td><td class="m">3</td><td>함수 = 컨트롤러 + 데이터패스, 함수 호출</td></tr>
+<tr><td>파이프라이닝, valid/ready, 배압</td><td class="m">4</td><td>PIPELINE, II, IL, ap_start/ap_done, 스트림 인터페이스</td></tr>
+<tr><td>CDC, 그레이 코드, 비동기 FIFO</td><td class="m">5</td><td>클럭이 다른 블록 사이의 연결</td></tr>
+<tr><td>스케줄링, 바인딩, 체이닝</td><td class="m">6</td><td>자원 수, 목표 클럭과 latency의 맞교환</td></tr>
+<tr><td>루프 지시어, 코드 재구성</td><td class="m">7</td><td>PIPELINE, UNROLL, 중첩 루프, tripcount</td></tr>
+<tr><td>배열 분할, 메모리를 통한 의존성</td><td class="m">8</td><td>ARRAY_PARTITION, DEPENDENCE, II 위반 원인</td></tr>
+<tr><td>작업 병렬, 스트림, line buffer</td><td class="m">9</td><td>DATAFLOW, hls::stream, 영상 처리</td></tr>
+<tr><td>고정소수점, CORDIC, 비트 증가</td><td class="m">10</td><td>ap_fixed, 비트 폭 최적화</td></tr>
+</table>
+
+<div class="real"><b>실제 도구에서는</b>ap_fixed의 기본 동작은 버림(AP_TRN)과 감기(AP_WRAP)입니다. float, double도 합성되지만 덧셈 하나에 여러 사이클과 많은 자원이 듭니다. sin, cos 같은 수학 함수는 HLS 수학 라이브러리가 CORDIC 같은 방법으로 구현해 줍니다.</div>
+<div class="recap"><b>이 장의 요점</b><ul><li>고정소수점은 정수에 소수점 위치를 약속한 것입니다. 넘침과 반올림 방식을 타입에 정합니다.</li><li>CORDIC은 시프트와 덧셈만으로 회전합니다. 반복 수와 비트 폭을 함께 정합니다.</li><li>FIR 누산기는 입력 + 계수 + log₂N 비트. 가장 적은 쪽 비트가 품질을 정합니다.</li><li>대칭 계수는 접어서 곱셈을 절반으로 줄입니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 2장 FIR 전체, 2.11 Complex FIR Filter, 3.3 Calculating Sine and Cosine, 3.5 Number Representation, 3.6 Cordic Optimizations</p></div>
+<h2><span class="sec">10.8</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{ // 실험 10-6
+  const ids=['cx_a','cx_b','cx_c','cx_d'];ids.forEach(id=>onInput(id,draw));
+  function draw(){const [a,b,c,d]=ids.map(id=>+$('#'+id).value);ids.forEach(id=>$('#'+id+'v').textContent=$('#'+id).value);
+    const re4=a*c-b*d,im4=a*d+b*c,k1=c*(a+b),k2=a*(d-c),k3=b*(c+d);
+    $('#cxstats').innerHTML=[['곱셈 4번',re4+(im4<0?' − j'+(-im4):' + j'+im4)],['곱셈 3번',(k1-k3)+((k1+k2)<0?' − j'+(-(k1+k2)):' + j'+(k1+k2))],['k1, k2, k3',k1+', '+k2+', '+k3],['연산 수','곱셈 4 + 덧셈 2  vs  곱셈 3 + 덧셈 5']].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v" style="font-size:16px">'+v+'</span></div>').join('');}
+  draw();
+})();
+
+(()=>{ // 실험 10-1
+  let B=[1,1,1,1,0,1,0,0],rnd='trn',ovf='wrap';
+  segBind('nb_r',v=>{rnd=v;draw();});segBind('nb_o',v=>{ovf=v;draw();});onInput('nb_f',draw);onInput('nb_x',draw);
+  $('#nb_bits').addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(b){B[+b.dataset.b]^=1;draw();}});
+  const nice=v=>{const s=fx(v,6).replace(/0+$/,'').replace(/\.$/,'');return s==='-0'?'0':s;};
+  function draw(){
+    const f=+$('#nb_f').value;$('#nb_fv').textContent=f;
+    let h='';B.forEach((v,i)=>{const w=(i===0?-1:1)*Math.pow(2,7-i-f);h+=(i===8-f&&f>0?'<span class="m" style="font-size:22px;color:var(--accent);margin:0 2px">.</span>':'')+'<button data-b="'+i+'" aria-pressed="'+(v?'true':'false')+'" style="min-width:46px;font-family:var(--mono);display:inline-flex;flex-direction:column;align-items:center;padding:4px 6px"><span style="font-size:16px">'+v+'</span><span style="font-size:10px;opacity:.75">'+nice(w)+'</span></button>';});
+    $('#nb_bits').innerHTML=h;
+    const u=B.reduce((a,v,i)=>a+v*Math.pow(2,7-i),0),sg=u>=128?u-256:u,fxv=sg/Math.pow(2,f);
+    $('#nb_stats').innerHTML=[['부호 없는 정수',u],['2의 보수 정수',sg],['고정소수점 (f='+f+')',nice(fxv)],['표현 범위',nice(-Math.pow(2,7-f))+' ~ '+nice(Math.pow(2,7-f)-Math.pow(2,-f))],['간격',nice(Math.pow(2,-f))]].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const x=+$('#nb_x').value;$('#nb_xv').textContent=fx(x,2);
+    const sc=x*Math.pow(2,f);let q=rnd==='trn'?Math.floor(sc):Math.floor(sc+0.5);let of=q>127||q<-128;
+    if(ovf==='wrap')q=((q+128)%256+256)%256-128;else q=Math.max(-128,Math.min(127,q));
+    const val=q/Math.pow(2,f),bits=((q+256)%256).toString(2).padStart(8,'0');
+    $('#nb_code').innerHTML=codeLines('ap_fixed<8, '+(8-f)+', '+(rnd==='trn'?'AP_TRN':'AP_RND')+', '+(ovf==='wrap'?'AP_WRAP':'AP_SAT')+'> v = '+fx(x,2)+';   // 전체 8비트, 정수부 '+(8-f)+'비트');
+    $('#nb_q').innerHTML=[['저장된 비트',bits.slice(0,8-f)+(f?'.'+bits.slice(8-f):'')],['저장된 값',nice(val)],['오차',nice(val-x)]].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v '+(k==='오차'&&Math.abs(val-x)>Math.pow(2,-f)?'badc':'')+'">'+v+'</span></div>').join('');
+    const m=$('#nb_msg');
+    if(of&&ovf==='wrap'){m.className='msg bad';m.innerHTML='범위를 넘었습니다. 감기 모드에서는 넘친 만큼 반대편 끝에서 다시 시작해서 부호까지 바뀝니다.';}
+    else if(of){m.className='msg warn';m.innerHTML='범위를 넘어서 가장 가까운 끝값으로 고정되었습니다(포화).';}
+    else{m.className='msg';m.innerHTML='범위 안입니다. 오차는 '+(rnd==='trn'?'버림이라 0 ~ −':'반올림이라 ±절반 ')+nice(Math.pow(2,-f)*(rnd==='trn'?1:0.5))+' 사이입니다. 소수부 비트를 늘리면 오차가 줄지만 범위가 좁아집니다.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 10-2
+  ['cd_t','cd_n','cd_f'].forEach(id=>onInput(id,draw));
+  function cordic(th,N,F){
+    const S=Math.pow(2,F),q=v=>F>0?Math.round(v*S):v;let K=1;for(let i=0;i<N;i++)K/=Math.sqrt(1+Math.pow(2,-2*i));
+    let x=q(K),y=0,z=q(th);const pts=[[x/S,y/S]],rows=[];
+    for(let i=0;i<N;i++){const d=z>=0?1:-1,a=q(Math.atan(Math.pow(2,-i))),xs=Math.floor(x/Math.pow(2,i)),ys=Math.floor(y/Math.pow(2,i));
+      const nx=x-d*ys,ny=y+d*xs;z=z-d*a;x=nx;y=ny;pts.push([x/S,y/S]);rows.push({i,d,a:Math.atan(Math.pow(2,-i))*180/Math.PI,z:z/S*180/Math.PI});}
+    return {c:x/S,s:y/S,pts,rows};
+  }
+  function draw(){
+    const td=+$('#cd_t').value,N=+$('#cd_n').value,F=+$('#cd_f').value;$('#cd_tv').textContent=td+'°';$('#cd_nv').textContent=N+'번';$('#cd_fv').textContent=F+'비트';
+    const th=td*Math.PI/180,r=cordic(th,N,F),R=95,cx=20,cy=115;let s='';
+    s+='<path d="M'+cx+' '+(cy-R)+' A'+R+' '+R+' 0 0 1 '+cx+' '+(cy+R)+'" style="fill:none;stroke:var(--grid);stroke-width:1.5"/><line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R+20)+'" y2="'+cy+'" style="stroke:var(--grid)"/>';
+    s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*1.15*Math.cos(th))+'" y2="'+(cy-R*1.15*Math.sin(th))+'" style="stroke:var(--accent);stroke-dasharray:4 3;stroke-width:1.5"/>';
+    r.pts.forEach((p,i)=>{const last=i===r.pts.length-1,op=0.25+0.75*i/Math.max(1,r.pts.length-1);
+      s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*p[0])+'" y2="'+(cy-R*p[1])+'" style="stroke:'+(last?'var(--trace)':'var(--ink2)')+';stroke-width:'+(last?3:1.2)+';opacity:'+(last?1:op)+'"/>';});
+    s+='<circle cx="'+(cx+R*r.c)+'" cy="'+(cy-R*r.s)+'" r="4" style="fill:var(--trace)"/><text x="'+(cx+R*1.15*Math.cos(th)+4)+'" y="'+(cy-R*1.15*Math.sin(th))+'" class="m" style="font-size:11px;fill:var(--accent)">'+td+'°</text>';
+    $('#cdsvg').innerHTML=s;
+    const ec=Math.abs(r.c-Math.cos(th)),es=Math.abs(r.s-Math.sin(th));
+    $('#cdstats').innerHTML=[['cos (CORDIC)',fx(r.c,5)],['cos (정답)',fx(Math.cos(th),5)],['sin (CORDIC)',fx(r.s,5)],['sin (정답)',fx(Math.sin(th),5)],['최대 오차',Math.max(ec,es).toExponential(1)]].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v" style="font-size:16px">'+v+'</span></div>').join('');
+    let e='<path d="M30,10 V116 H270" class="thin"/>',pts=[];
+    for(let n=1;n<=16;n++){const q=cordic(th,n,F),er=Math.max(Math.abs(q.c-Math.cos(th)),Math.abs(q.s-Math.sin(th)),1e-9),lg=Math.max(-7,Math.log10(er));pts.push([30+(n-1)*15.5,10-lg/7*106]);}
+    for(let l=0;l>=-6;l-=2)e+='<text x="26" y="'+(10-l/7*106+4)+'" text-anchor="end" class="m dim" style="font-size:9px">1e'+l+'</text>';
+    e+='<polyline points="'+pts.map(p=>p.join(',')).join(' ')+'" style="fill:none;stroke:var(--trace);stroke-width:1.6"/>';
+    pts.forEach((p,i)=>{e+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(i===N-1?5:2.2)+'" style="fill:'+(i===N-1?'var(--accent)':'var(--trace)')+'"/>';});
+    e+='<text x="270" y="132" text-anchor="end" class="dim" style="font-size:10px">반복 횟수 1~16</text><text x="34" y="20" class="dim" style="font-size:10px">오차 (로그, 아래로 갈수록 작음)</text>';
+    $('#cderr').innerHTML=e;
+    $('#cdtab').innerHTML='<tr><th>i</th><th>회전 각도 atan(2^−i)</th><th>방향 d</th><th>남은 각도 z</th></tr>'+r.rows.slice(0,8).map(w=>'<tr><td>'+w.i+'</td><td>'+fx(w.a,2)+'°</td><td>'+(w.d>0?'+ (왼쪽)':'− (오른쪽)')+'</td><td>'+fx(w.z,2)+'°</td></tr>').join('')+(r.rows.length>8?'<tr><td colspan="4">… 모두 '+r.rows.length+'번</td></tr>':'');
+    $('#cdmsg').innerHTML='반복할 때마다 남은 각도 쪽으로 점점 작은 각도만큼 돌아 목표에 다가갑니다. 각 반복은 시프트 두 번과 덧셈·뺄셈 세 번뿐이고 곱셈기는 쓰지 않습니다. 오차 그래프가 평평해지는 지점이 소수부 '+F+'비트의 한계입니다.';
+  }
+  draw();
+})();
+
+(()=>{ // 실험 10-5
+  const H=[0.07,0.24,0.38,0.24,0.07],N=96,X=[];let r=11;
+  for(let n=0;n<N;n++){r=(r*1103515245+12345)%2147483648;X.push(Math.max(-0.99,Math.min(0.99,0.6*Math.sin(2*Math.PI*n/32)+0.35*((r/2147483648)-0.5))));}
+  ['fx_i','fx_c','fx_o'].forEach(id=>onInput(id,draw));
+  const qz=(v,b)=>Math.max(-1,Math.min(1-Math.pow(2,1-b),Math.round(v*Math.pow(2,b-1))/Math.pow(2,b-1)));
+  function draw(){
+    const bi=+$('#fx_i').value,bc=+$('#fx_c').value,bo=+$('#fx_o').value;$('#fx_iv').textContent=bi+'비트';$('#fx_cv').textContent=bc+'비트';$('#fx_ov').textContent=bo+'비트';
+    const hq=H.map(h=>qz(h,bc)),xq=X.map(x=>qz(x,bi)),yr=[],yq=[];
+    for(let n=0;n<N;n++){let a=0,b=0;for(let k=0;k<5;k++){const xv=n-k>=0?X[n-k]:0,xqv=n-k>=0?xq[n-k]:0;a+=H[k]*xv;b+=hq[k]*xqv;}
+      yr.push(a);yq.push(Math.max(-1,Math.min(1,Math.floor(b*Math.pow(2,bo-1))/Math.pow(2,bo-1))));}
+    let ps=0,pe=0;for(let n=4;n<N;n++){ps+=yr[n]*yr[n];pe+=(yr[n]-yq[n])*(yr[n]-yq[n]);}
+    const snr=pe>0?10*Math.log10(ps/pe):99,acc=bi+bc+Math.ceil(Math.log2(5));
+    const Xs=n=>10+n*(540/(N-1)),Ys=v=>75-v*60;let s='<line x1="10" x2="550" y1="75" y2="75" style="stroke:var(--grid)"/>';
+    const pl=(a,c,w)=>'<polyline points="'+a.map((v,n)=>Xs(n).toFixed(1)+','+Ys(v).toFixed(1)).join(' ')+'" style="fill:none;stroke:'+c+';stroke-width:'+w+'"/>';
+    s+=pl(X,'var(--grid)',1)+pl(yr,'var(--lo)',3)+pl(yq,'var(--accent)',1.6);
+    $('#fxsvg').innerHTML=s;
+    $('#fxstats').innerHTML=[['SNR',fx(snr,1)+' dB'],['넘치지 않는 누산기',acc+'비트'],['출력에서 자르는 비트',Math.max(0,acc-bo)+'비트']].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    $('#fxtab').innerHTML='<tr><th>계수</th>'+H.map((h,i)=>'<td>h'+i+'</td>').join('')+'</tr><tr><th>실수</th>'+H.map(h=>'<td>'+fx(h,4)+'</td>').join('')+'</tr><tr><th>'+bc+'비트</th>'+hq.map((h,i)=>'<td style="'+(Math.abs(h-H[i])>0.01?'color:var(--bad)':'')+'">'+fx(h,4)+'</td>').join('')+'</tr>';
+    const worst=Math.min(bi,bc,bo);
+    $('#fxmsg').innerHTML='SNR '+fx(snr,1)+' dB입니다. 지금은 '+(bi===worst?'입력':bc===worst?'계수':'출력')+' 비트가 가장 적어서 품질을 정하고 있습니다. 누산기는 입력 '+bi+' + 계수 '+bc+' + log₂5 올림 3 = '+acc+'비트면 어떤 입력에도 넘치지 않습니다.';
+  }
+  draw();
+})();
+
+(()=>{
+  const H=[1,3,3,1];
+  const CODE={
+    A:'int fir(int x) {\n  static int shift[4];\n  const int h[4] = {1, 3, 3, 1};\n  int acc = 0;\n  for (int k = 3; k > 0; k--)\n    shift[k] = shift[k - 1];\n  shift[0] = x;\n  for (int k = 0; k < 4; k++)\n    acc += h[k] * shift[k];\n  return acc;\n}',
+    B:'int fir(int x) {\n#pragma HLS PIPELINE II=1\n  static int shift[4];\n#pragma HLS ARRAY_PARTITION variable=shift complete\n  const int h[4] = {1, 3, 3, 1};\n  int acc = 0;\n  for (int k = 3; k > 0; k--)\n    shift[k] = shift[k - 1];\n  shift[0] = x;\n  for (int k = 0; k < 4; k++)\n    acc += h[k] * shift[k];\n  return acc;\n}',
+    C:'module fir4 (input clk, input [15:0] x,\n             output reg [31:0] y);\n  reg [31:0] z1, z2, z3;\n  // 전치형: 곱한 값을 레지스터 사슬에 더해 나감\n  always @(posedge clk) begin\n    z3 <= 1 * x;\n    z2 <= z3 + 3 * x;\n    z1 <= z2 + 3 * x;\n    y  <= z1 + 1 * x;\n  end\nendmodule'};
+  const DESC={
+    A:'곱셈기와 덧셈기 하나씩을 루프 FSM이 네 번 돌려 씁니다. 시프트 배열은 메모리라 한 번에 두 칸까지만 읽고 쓸 수 있습니다. 작지만 느립니다.',
+    B:'루프가 모두 펼쳐지고 shift[]는 레지스터 네 개가 됩니다. 곱셈 네 개가 동시에 일어나고, 덧셈 트리 중간에 도구가 파이프라인 레지스터를 넣었습니다.',
+    C:'x가 네 곱셈기에 동시에 들어가고, 곱한 값이 z3 → z2 → z1 → y로 더해지며 흘러갑니다. 레지스터 사이 경로가 짧고 latency는 1사이클입니다.'};
+  const II={A:9,B:1,C:1},LAT={A:9,B:3,C:1};
+  const box=(x,y,w,h,t,st)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="3" class="box" style="'+(st||'')+'"/><text x="'+(x+w/2)+'" y="'+(y+h/2+5)+'" text-anchor="middle" style="font-size:12.5px">'+t+'</text>';
+  const mul=(x,y,t)=>'<rect x="'+x+'" y="'+y+'" width="52" height="28" rx="3" style="fill:var(--p1)"/><text x="'+(x+26)+'" y="'+(y+19)+'" text-anchor="middle" style="fill:var(--onacc);font-size:12.5px">'+t+'</text>';
+  const add=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="15" style="fill:var(--p2)"/><text x="'+x+'" y="'+(y+5)+'" text-anchor="middle" style="fill:var(--onacc);font-size:15px">+</text>';
+  const reg=(x,y,t)=>'<rect x="'+x+'" y="'+y+'" width="46" height="26" rx="2" class="box" style="stroke-width:2"/><text x="'+(x+23)+'" y="'+(y+17)+'" text-anchor="middle" class="m" style="font-size:11.5px">'+t+'</text>';
+  const ln=d=>'<path d="'+d+'" class="thin" marker-end="url(#ah8)"/>';
+  const DEF='<defs><marker id="ah8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+  function hw(k){
+    let s=DEF;
+    if(k==='A'){
+      s+='<text x="8" y="118" class="m">x</text>'+ln('M22 114 H48')+box(50,94,110,40,'shift[0..3] 메모리','fill:var(--sheet2)')+ln('M160 114 H196')+mul(198,100,'× h[k]')+ln('M250 114 H286')+add(302,114)+ln('M317 114 H350')+reg(352,101,'acc')+ln('M398 114 H440')+'<text x="448" y="118" class="m">y</text>';
+      s+='<path d="M375 127 V160 H302 V131" class="thin" marker-end="url(#ah8)"/><text x="310" y="176" class="dim" style="font-size:11px">되먹임</text>';
+      s+=box(160,18,170,36,'루프 FSM (k = 0..3)')+'<path d="M200 54 V94 M224 54 V100 M300 54 V60 H375 V101" class="thin" style="stroke-dasharray:4 3"/>';
+      s+='<text x="50" y="214" class="dim" style="font-size:11.5px">곱셈기 1개를 4사이클에 걸쳐 돌려 씀</text>';
+    }else if(k==='B'){
+      s+='<text x="6" y="38" class="m">x</text>'+ln('M18 34 H42');
+      [0,1,2,3].forEach(i=>{const x=44+i*100;s+=reg(x,21,'s'+i);if(i<3)s+=ln('M'+(x+46)+' 34 H'+(x+98));s+=ln('M'+(x+23)+' 47 V72')+mul(x-3,74,'×'+H[i]);});
+      s+='<line x1="30" y1="114" x2="420" y2="114" style="stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4"/><text x="424" y="118" style="font-size:11px;fill:var(--accent)">파이프라인 레지스터</text>';
+      s+=ln('M67 102 V128 H105 V140')+ln('M167 102 V128 H129 V140')+ln('M267 102 V128 H305 V140')+ln('M367 102 V128 H329 V140');
+      s+=add(117,154)+add(317,154);
+      s+='<line x1="30" y1="182" x2="420" y2="182" style="stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4"/>';
+      s+=ln('M117 169 V196 H200 V200')+ln('M317 169 V196 H230 V200')+add(215,214);
+      s+=ln('M230 214 H300')+reg(302,201,'y')+'<text x="360" y="218" class="dim" style="font-size:11px">곱셈 4개가 동시에</text>';
+    }else{
+      s+='<text x="6" y="28" class="m">x</text><path d="M18 24 H470" class="wire" style="stroke:var(--trace)"/>';
+      const xs=[60,180,300,420],lab=['×1 (h3)','×3 (h2)','×3 (h1)','×1 (h0)'];
+      xs.forEach((x,i)=>{s+='<circle cx="'+(x+26)+'" cy="24" r="3" style="fill:var(--trace)"/>'+ln('M'+(x+26)+' 24 V54')+mul(x,56,lab[i].split(' ')[0])+'<text x="'+(x+26)+'" y="100" text-anchor="middle" class="dim" style="font-size:10.5px">'+lab[i].split(' ')[1]+'</text>';});
+      s+=ln('M86 84 V136')+reg(63,138,'z3')+ln('M109 151 H189');
+      s+=ln('M206 84 V136')+add(206,151)+ln('M221 151 H246')+reg(248,138,'z2')+ln('M294 151 H309');
+      s+=ln('M326 84 V136')+add(326,151)+ln('M341 151 H366')+reg(368,138,'z1')+ln('M414 151 H429');
+      s+=ln('M446 84 V136')+add(446,151)+ln('M461 151 H486')+reg(488,138,'y');
+      s+='<text x="63" y="196" class="dim" style="font-size:11.5px">레지스터 사이에는 곱셈 하나 + 덧셈 하나뿐</text>';
+    }
+    return s;
+  }
+  let K='A',SIG='imp';
+  function sig(){
+    const n=30;const x=[];let r=7;
+    for(let i=0;i<n;i++){
+      if(SIG==='imp')x.push(i===0?10:0);
+      else if(SIG==='step')x.push(10);
+      else if(SIG==='sq')x.push(Math.floor(i/4)%2===0?10:0);
+      else{r=(r*1103515245+12345)%2147483648;x.push(r%10);}
+    }
+    return x;
+  }
+  function drawCode(){
+    const pl=CODE[K].split('\n').map((l,i)=>l.startsWith('#pragma')?i:-1).filter(i=>i>=0);
+    $('#fcode').innerHTML=codeLines(CODE[K],pl);$('#fhw').innerHTML=hw(K);$('#fdesc').textContent=DESC[K];
+  }
+  function drawWave(){
+    const C=26,x=sig(),y=k=>H.reduce((a,h,j)=>a+(k-j>=0?h*x[k-j]:0),0);
+    const row=(ii,lat,isY)=>{const v=Array(C).fill('-');for(let k=0;k*ii<C;k++){const t=k*ii+(isY?lat:0);if(t<C)v[t]=isY?y(k):x[k];}return v;};
+    $('#fwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'x (B, C)',t:'v',sep:1,v:row(1,0,false)},{n:'y C (RTL)',t:'v',sep:1,v:row(1,1,true)},{n:'y B (HLS)',t:'v',sep:1,v:row(1,3,true)},{n:'x (A)',t:'v',sep:1,v:row(9,0,false)},{n:'y A (HLS)',t:'v',sep:1,v:row(9,9,true)}],{cycles:C,cw:34,lw:84});
+  }
+  segBind('f_sel',v=>{K=v;drawCode();});segBind('f_sig',v=>{SIG=v;drawWave();});
+  drawCode();drawWave();
+})();
+
+quiz($('#quiz'),[
+  {q:'B와 C는 둘 다 II=1인데 latency가 3과 1로 다릅니다. 이유는?',o:['B가 곱셈기를 더 적게 써서','B 안에 도구가 넣은 파이프라인 레지스터 단이 더 있어서','C가 클럭을 더 빠르게 써서'],a:1,e:'맞습니다. 처리량(II)은 같아도, 입력에서 출력까지 거치는 레지스터 단 수가 다르면 latency가 다릅니다. 4장의 내용 그대로입니다.'},
+  {q:'계수가 [1, 3, 3, 1]처럼 상수일 때 곱셈기에 대해 맞는 설명은?',o:['항상 DSP 곱셈기가 4개 필요하다','시프트와 덧셈으로 바뀌어 곱셈기가 필요 없을 수 있다','상수 곱셈은 합성할 수 없다'],a:1,e:'맞습니다. 3·x = (x &lt;&lt; 1) + x 처럼 바뀌므로 곱셈기 대신 덧셈기 몇 개로 충분합니다.'},
+  {q:'HLS가 RTL보다 특히 유리한 상황은?',o:['면적을 마지막 LUT까지 줄여야 할 때','알고리즘을 자주 바꾸며 여러 설계를 비교해 봐야 할 때','클럭 도메인을 여러 개 다뤄야 할 때'],a:1,e:'맞습니다. 지시어만 바꿔 설계 공간을 빠르게 탐색할 수 있는 것이 HLS의 가장 큰 장점입니다.'},
+  {q:'<code>ap_fixed&lt;8, 3&gt;</code>가 나타낼 수 있는 범위는?',o:['−8 ~ 7.9375','−4 ~ 3.96875','0 ~ 7.96875'],a:1,e:'맞습니다. 정수부 3비트(부호 포함)라 −4부터, 소수부 5비트라 간격이 1/32이므로 최댓값은 4 − 1/32입니다.'},
+  {q:'CORDIC 반복 한 번에 필요한 연산은?',o:['곱셈 4번','시프트와 덧셈·뺄셈','나눗셈 1번'],a:1,e:'맞습니다. 2의 거듭제곱을 곱하는 것은 시프트이므로 곱셈기가 필요 없습니다. 각도 표는 상수 ROM에 둡니다.'},
+  {q:'입력 12비트, 계수 10비트인 8탭 FIR에서 어떤 입력에도 넘치지 않으려면 누산기는 최소 몇 비트?',o:['22비트','25비트','30비트'],a:1,e:'맞습니다. 곱이 22비트이고 8개를 더하면 log₂8 = 3비트가 더 늘어 25비트입니다.'},
+  {q:'계수가 대칭인 8탭 FIR 필터를 대칭 접기로 만들면 곱셈기는 몇 개?',o:['2개','4개','8개'],a:1,e:'맞습니다. 같은 계수를 곱할 입력 둘을 먼저 더하므로 곱셈이 절반이 됩니다.'},
+  {q:'복소수 곱셈을 곱셈 3번으로 바꾸는 기법의 대가는?',o:['정확도가 떨어진다','덧셈이 2번에서 5번으로 늘어난다','곱셈기가 더 커진다'],a:1,e:'맞습니다. 귀한 곱셈기 하나를 덧셈 세 번과 바꾸는 거래입니다. 정수 연산이면 결과는 완전히 같습니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch09-dataflow.html"><span>이전</span>9장. 작업 병렬과 스트리밍</a><a class="nx" href="ch11-systolic.html"><span>다음</span>11장. 시스톨릭 배열</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li class="on">10장. 수 표현과 DSP 예제</li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>7장. HLS 루프 지시어 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">7장</span><span class="dots" aria-label="12장 중 7장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L181.8,40 L185.8,58 L304.2,58 L308.2,40 L426.8,40 L430.8,58 L549.2,58 L553.2,40 L671.8,40 L675.8,58 L794.2,58 L798.2,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><div class="num">7장</div><h1>HLS 루프 지시어</h1><p class="lede">PIPELINE, UNROLL, ARRAY_PARTITION을 바꿔 가며 II와 latency가 어떻게 변하는지 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">7.1</span>루프가 시간을 먹는다</h2>
+<p>6장 끝에서 본 것처럼, 지시어 없이 합성한 루프는 반복 하나를 완전히 끝낸 뒤에야 다음 반복을 시작합니다. 반복 한 번이 10사이클이고 64번 돌면 640사이클입니다. HLS 코드를 빠르게 만드는 일은 대부분 루프를 다루는 일이고, 이때 쓰는 도구가 <b>지시어</b>(pragma)입니다. 코드의 의미는 그대로 두고, 하드웨어를 어떻게 만들지만 도구에 알려 줍니다.</p>
+<ul>
+<li><b>PIPELINE</b>: 4장의 파이프라이닝을 루프에 적용합니다. 반복 하나가 끝나기를 기다리지 않고 II 사이클마다 새 반복을 시작합니다.</li>
+<li><b>UNROLL</b>: 루프 몸체를 여러 벌 복사해서, 한 번에 여러 반복을 처리합니다. 연산기도 그만큼 늘어납니다.</li>
+<li><b>ARRAY_PARTITION</b>: 배열을 여러 메모리로 쪼개서 한 사이클에 읽을 수 있는 원소 수를 늘립니다.</li>
+</ul>
+<p>파이프라인 루프를 볼 때 쓰는 말 세 가지를 기억하세요.</p>
+<ul>
+<li><b>IL</b>(iteration latency): 반복 하나가 처음부터 끝까지 걸리는 사이클.</li>
+<li><b>II</b>(initiation interval): 다음 반복을 시작하기까지의 간격. II=1이면 매 사이클 새 반복이 시작됩니다.</li>
+<li>전체 사이클 ≈ (반복 횟수 − 1) × II + IL</li>
+</ul>
+<p>II를 목표만큼 못 줄이게 막는 원인은 크게 둘입니다. <b>자원</b>(메모리 포트가 모자람)과 <b>의존성</b>(이번 반복이 이전 반복의 결과를 기다려야 함)입니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 7-1</b><span>지시어를 바꾸며 리포트 읽기</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>64개 원소, float 기준입니다. 메모리 읽기 2사이클, 곱셈 3사이클, 덧셈 4사이클, 쓰기 1사이클로 가정하고, 메모리(BRAM) 하나는 포트가 2개입니다.</p>
+<div class="ctrl"><span class="lbl">코드</span><div class="seg" id="k_sel"><button data-v="vec" aria-pressed="true">벡터 연산</button><button data-v="dot" aria-pressed="false">내적</button><button data-v="dot4" aria-pressed="false">내적 + 부분합 4개</button></div></div>
+<div class="ctrl"><span class="lbl">PIPELINE</span><div class="seg" id="k_pipe"><button data-v="0" aria-pressed="true">끔</button><button data-v="1" aria-pressed="false">II=1</button><button data-v="2" aria-pressed="false">II=2</button><button data-v="4" aria-pressed="false">II=4</button></div></div>
+<div class="ctrl"><span class="lbl">UNROLL factor</span><div class="seg" id="k_u"><button data-v="1" aria-pressed="true">1</button><button data-v="2" aria-pressed="false">2</button><button data-v="4" aria-pressed="false">4</button><button data-v="8" aria-pressed="false">8</button></div></div>
+<div class="ctrl"><span class="lbl">ARRAY_PARTITION</span><div class="seg" id="k_p"><button data-v="1" aria-pressed="true">없음</button><button data-v="2" aria-pressed="false">cyclic 2</button><button data-v="4" aria-pressed="false">cyclic 4</button><button data-v="full" aria-pressed="false">complete</button></div></div>
+<div class="g2" style="margin-top:6px">
+<pre class="code" id="kcode" data-manual></pre>
+<div>
+<div class="stats" id="kstats"></div>
+<div id="krep"></div>
+</div>
+</div>
+<div class="sub">처음 몇 번의 반복이 시간축에서 겹치는 모습</div>
+<div class="scroll" id="kgantt"></div>
+<div class="sub">대략적인 합성 결과</div>
+<div class="scroll"><svg id="khw" class="sch" viewBox="0 0 560 200" role="img" aria-label="합성 구조 스케치"></svg></div>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">7.2</span>실험에서 찾아볼 것</h2>
+<ol>
+<li><b>벡터 연산</b>에서 PIPELINE II=1만 켜 보세요. 전체 사이클이 거의 IL배 줄어듭니다.</li>
+<li>여기에 UNROLL 4를 더하면 II가 2로 올라갑니다. 매 사이클 a에서 4개를 읽어야 하는데 포트는 2개뿐이기 때문입니다. cyclic 2로 쪼개면 다시 II=1이 됩니다.</li>
+<li><b>내적</b>에서는 PIPELINE II=1을 줘도 II가 4입니다. <code>sum</code>에 더하려면 이전 반복의 덧셈(4사이클)이 끝나야 하기 때문입니다. UNROLL을 해도 덧셈이 줄줄이 이어질 뿐 나아지지 않습니다.</li>
+<li><b>부분합 4개</b>로 바꾸면 연속된 반복이 서로 다른 p[]에 더하므로 의존성이 끊기고 II=1이 됩니다. 코드를 조금 바꾸는 것이 지시어보다 효과가 큰 경우입니다.</li>
+</ol>
+<div class="note"><b>세 지시어는 함께 쓴다</b>
+UNROLL만 하면 메모리 포트가 막히고, ARRAY_PARTITION만 하면 늘어난 포트를 쓸 연산이 없습니다. PIPELINE만 하면 의존성에 걸릴 수 있습니다. 실제 HLS 리포트에서 II가 목표보다 크게 나오면, 리포트가 알려주는 원인(자원인지 의존성인지)부터 확인하세요.</div>
+
+<h2><span class="sec">7.3</span>II는 어떻게 정해지나: 공식으로 정리</h2>
+<p>실험 7-1의 리포트 문구를 공식으로 바꾸면 이렇습니다. 책 1.4.3절의 핵심이고, 앞으로 모든 장에서 II를 따질 때 이 식을 씁니다.</p>
+<div class="math">II = max( II<sub>자원</sub>, II<sub>재귀</sub>, 목표 II )</div>
+<ul>
+<li><b>II<sub>자원</sub></b> = 자원마다 ⌈반복 한 번에 그 자원을 쓰는 횟수 ÷ 그 자원의 개수⌉ 중 가장 큰 값. 메모리라면 “개수”는 포트 수(BRAM 하나에 2)입니다.</li>
+<li><b>II<sub>재귀</sub></b> = 되먹임 고리마다 ⌈고리를 한 바퀴 도는 지연 ÷ 의존 거리⌉ 중 가장 큰 값. <b>의존 거리</b>는 “몇 번째 앞 반복의 결과를 쓰는가”입니다. <code>sum += a[i]</code>는 바로 앞 반복이라 거리 1, <code>p[i%4] += …</code>는 네 번째 앞 반복이라 거리 4입니다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 7-2</b><span>II 계산기</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">예제</span><div class="seg" id="ii_p"><button data-v="vec" aria-pressed="true">벡터 UNROLL 4</button><button data-v="dot" aria-pressed="false">float 내적</button><button data-v="dot4" aria-pressed="false">부분합 4개</button><button data-v="d2" aria-pressed="false">a[i] = a[i−2]·c + x[i]</button><button data-v="hist" aria-pressed="false">히스토그램</button></div></div>
+<pre class="code" id="iicode" data-manual></pre>
+<label class="sl"><span>배열 하나 읽기 횟수</span><input type="range" id="ii_r" min="1" max="16" value="4"><output id="ii_rv"></output></label>
+<label class="sl"><span>그 배열의 뱅크 수</span><input type="range" id="ii_b" min="1" max="8" value="1"><output id="ii_bv"></output></label>
+<label class="sl"><span>곱셈 횟수 / 곱셈기</span><input type="range" id="ii_m" min="1" max="8" value="4"><output id="ii_mv"></output></label>
+<label class="sl"><span>곱셈기 개수</span><input type="range" id="ii_k" min="1" max="8" value="4"><output id="ii_kv"></output></label>
+<label class="sl"><span>고리 지연 (0이면 고리 없음)</span><input type="range" id="ii_d" min="0" max="16" value="0"><output id="ii_dv"></output></label>
+<label class="sl"><span>의존 거리</span><input type="range" id="ii_s" min="1" max="8" value="1"><output id="ii_sv"></output></label>
+<div class="scroll"><svg id="iisvg" class="sch" viewBox="0 0 560 130" role="img" aria-label="II 구성 요소"></svg></div>
+<p class="msg" id="iimsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p><b>연습</b>: 공식으로 직접 계산해 보세요.</p>
+<ol>
+<li>반복마다 배열 a에서 6개를 읽고, a를 cyclic 2로 나눴습니다. 다른 제약이 없다면 II는?</li>
+<li><code>y[i] = y[i-1] * c + x[i]</code>에서 곱셈 3사이클, 덧셈 1사이클입니다. II는?</li>
+<li>2번을 <code>y[i] = y[i-3] * c + x[i]</code>로 바꾸면 II는?</li>
+</ol>
+<details><summary>답 보기</summary>
+<ol>
+<li>포트 수 = 뱅크 2 × 포트 2 = 4. ⌈6 ÷ 4⌉ = <b>2</b>.</li>
+<li>고리 = 곱셈 3 + 덧셈 1 = 4사이클, 거리 1. ⌈4 ÷ 1⌉ = <b>4</b>.</li>
+<li>거리가 3이 되어 ⌈4 ÷ 3⌉ = <b>2</b>. 의존 거리를 늘리는 것이 4장 부분합 기법의 원리입니다.</li>
+</ol>
+</details>
+
+<h2><span class="sec">7.4</span>지시어보다 먼저: 코드 재구성</h2>
+<p>지시어는 코드가 허락하는 범위 안에서만 효과를 냅니다. 같은 일을 하는 코드라도 모양을 조금 바꾸면 도구가 만들 수 있는 회로가 크게 달라집니다. 10장의 FIR 필터를 HLS로 처음 쓰면 흔히 이런 모양이 됩니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 7-3</b><span>같은 FIR, 세 가지 코드 모양</span></figcaption>
+<div class="body">
+<div class="seg" id="rs_k"><button data-v="orig" aria-pressed="true">처음 코드</button><button data-v="hoist" aria-pressed="false">조건문 빼내기</button><button data-v="fiss" aria-pressed="false">루프 쪼개기</button></div>
+<pre class="code" id="rscode" data-manual style="margin-top:12px"></pre>
+<table class="t" id="rstab"></table>
+<p class="msg" id="rsmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<ul>
+<li><b>조건문 빼내기(code hoisting)</b>: 특정 반복에서만 참이 되는 조건은 루프 밖으로 꺼냅니다. 루프 몸체가 매 반복 똑같아지면 파이프라인과 펼치기가 쉬워집니다.</li>
+<li><b>루프 쪼개기(loop fission)</b>: 성격이 다른 두 일을 한 루프에 섞지 말고 루프 둘로 나눕니다. 그러면 각 루프에 맞는 지시어를 따로 줄 수 있습니다. 여기서는 시프트를 완전히 펼쳐 시프트 레지스터로 만들고, 곱셈-누산은 파이프라인합니다.</li>
+</ul>
+
+<h2><span class="sec">7.5</span>중첩 루프는 어디를 파이프라인하나</h2>
+<p>실제 코드는 대부분 루프 안에 루프가 있습니다. 행렬-벡터 곱으로 보겠습니다.</p>
+<pre class="code">
+ROW: for (int i = 0; i &lt; 8; i++) {
+  int acc = 0;
+  COL: for (int j = 0; j &lt; 8; j++)
+    acc += M[i][j] * x[j];
+  y[i] = acc;
+}
+</pre>
+<p>PIPELINE을 안쪽 루프에 주면 안쪽만 파이프라인되고, 바깥 반복이 바뀔 때마다 파이프라인이 비었다 다시 찹니다. 바깥 루프에 주면 그 안의 루프는 <b>모두 펼쳐집니다</b>. 안쪽 루프가 완전한 직사각형 모양(바깥과 안쪽 사이에 다른 코드가 없음)이면 두 루프를 하나로 합치는(flatten) 방법도 있습니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 7-4</b><span>8×8 행렬-벡터 곱의 PIPELINE 위치</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>int 기준으로 읽기 2, 곱셈 2, 덧셈 1사이클로 가정합니다.</p>
+<div class="ctrl"><span class="lbl">PIPELINE 위치</span><div class="seg" id="nl_k"><button data-v="none" aria-pressed="false">없음</button><button data-v="in" aria-pressed="true">안쪽 루프</button><button data-v="out" aria-pressed="false">바깥 루프</button><button data-v="flat" aria-pressed="false">두 루프 합치기</button></div></div>
+<div class="ctrl"><span class="lbl">M, x 분할</span><div class="seg" id="nl_p"><button data-v="0" aria-pressed="true">없음</button><button data-v="1" aria-pressed="false">M은 dim=2, x는 complete</button></div></div>
+<pre class="code" id="nlcode" data-manual></pre>
+<div class="scroll"><svg id="nlsvg" class="sch" viewBox="0 0 560 150" role="img" aria-label="중첩 루프 방식별 사이클"></svg></div>
+<p class="msg" id="nlmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">7.6</span>반복 횟수를 모를 때</h2>
+<p>루프 경계가 실행할 때 정해지는 변수라면, 도구는 반복 횟수를 알 수 없어 리포트의 latency 칸에 “?”를 씁니다. 희소 행렬처럼 행마다 원소 수가 다른 경우가 대표적입니다.</p>
+<pre class="code">
+for (int i = 0; i &lt; n; i++) {          // n은 실행 중에 정해짐
+#pragma HLS LOOP_TRIPCOUNT min=1 max=64 avg=16
+#pragma HLS PIPELINE II=1
+  sum += val[i] * x[col[i]];
+}
+</pre>
+<p>LOOP_TRIPCOUNT는 리포트에 쓸 예상 반복 횟수를 알려 줄 뿐 회로는 바꾸지 않습니다. 경계가 변수인 루프는 완전히 펼칠 수도 없습니다. 펼치고 싶다면 최대 횟수로 루프를 쓰고 안에서 <code>if (i &lt; n)</code>로 막는 식으로 고칩니다. 이때도 6.4에서 본 것처럼 그 조건문은 하드웨어로 남습니다.</p>
+
+<div class="real"><b>실제 도구에서는</b>최신 Vitis HLS는 지시어가 없어도 안쪽 루프를 자동으로 파이프라인하는 경우가 많아서, 이 장의 “PIPELINE 없음”과 기본 결과가 다를 수 있습니다(버전과 설정에 따라 다름). 끄려면 <code>#pragma HLS PIPELINE off</code>를 씁니다. 목표 II를 못 맞추면 리포트에 원인(메모리 포트 부족, 반복 사이 의존성 등)이 경고로 나오므로 그것부터 읽으세요. 루프에 이름표(<code>ROW: for</code>)를 붙이면 리포트에서 찾기 쉽습니다.</div>
+<div class="recap"><b>이 장의 요점</b><ul><li>전체 사이클 ≈ (반복 횟수 − 1) × II + IL.</li><li>PIPELINE은 겹치기, UNROLL은 복사입니다. 둘 다 메모리 포트와 반복 사이 의존성에 막힙니다.</li><li>지시어보다 코드 재구성(조건문 빼내기, 루프 쪼개기)이 먼저입니다.</li><li>중첩 루프는 어디를 파이프라인하느냐가 결정적입니다. 바깥을 하면 안쪽이 모두 펼쳐집니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 2.6 Code Hoisting, 2.7 Loop Fission, 2.8 Loop Unrolling, 2.9 Loop Pipelining, 4.3 Matrix-Vector Multiplication Optimizations, 4.4 Pipelining and Parallelism, 6.4 Specifying Loop Properties</p></div>
+<h2><span class="sec">7.7</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{
+  const N=64,LD=2,MUL=3,ADD=4,ST=1;
+  let K='vec',pipe=0,U=1,P='1';
+  function model(K,pipe,U,P){
+    const full=P==='full',Pn=full?Infinity:+P;
+    const memC=full?1:Math.ceil(U/(2*Pn)),mx=memC-1;
+    const addN=K==='vec'?1:K==='dot'?U:Math.ceil(U/4);
+    const IL=LD+mx+MUL+ADD*addN+(K==='vec'?ST:0);
+    const IIres=memC,IIrec=K==='vec'?1:K==='dot'?ADD*U:Math.ceil(ADD*U/4);
+    const iters=N/U;let II=null,total;
+    if(pipe){II=Math.max(pipe,IIres,IIrec);total=(iters-1)*II+IL+2;}else total=iters*(IL+1)+2;
+    if(K==='dot4')total+=2*ADD;
+    const dsp=U*3+U*2+(K==='dot4'?2:0);
+    const nArr=K==='vec'?3:2,bram=full?0:Pn*nArr;
+    return {IL,II,IIres,IIrec,iters,total,mx,addN,dsp,bram,full,nArr};
+  }
+  const pal={LD:'var(--p0)',MUL:'var(--p1)',ADD:'var(--p2)',ST:'var(--p3)'};
+  function draw(){
+    const m=model(K,pipe,U,P),base=model(K,0,1,'1');
+    // 코드
+    const arrs=K==='vec'?['a','b','c']:['a','b'];
+    let c=K==='vec'?'void vec(float a[64], float b[64], float c[64], float k) {\n':'float dot(float a[64], float b[64]) {\n';
+    if(P!=='1')arrs.forEach(x=>{c+='#pragma HLS ARRAY_PARTITION variable='+x+' '+(P==='full'?'complete':'cyclic factor='+P)+'\n';});
+    if(K==='dot')c+='  float sum = 0;\n';
+    if(K==='dot4')c+='  float p[4] = {0, 0, 0, 0};\n#pragma HLS ARRAY_PARTITION variable=p complete\n';
+    c+='  for (int i = 0; i < 64; i++) {\n';
+    if(pipe)c+='#pragma HLS PIPELINE II='+pipe+'\n';
+    if(U>1)c+='#pragma HLS UNROLL factor='+U+'\n';
+    c+=K==='vec'?'    c[i] = a[i] * b[i] + k;\n':K==='dot'?'    sum += a[i] * b[i];\n':'    p[i % 4] += a[i] * b[i];\n';
+    c+='  }\n'+(K==='dot'?'  return sum;\n':K==='dot4'?'  return (p[0] + p[1]) + (p[2] + p[3]);\n':'')+'}';
+    const pl=c.split('\n').map((l,i)=>l.startsWith('#pragma')?i:-1).filter(i=>i>=0);
+    $('#kcode').innerHTML=codeLines(c,pl);
+    // 통계
+    const sp=base.total/m.total;
+    $('#kstats').innerHTML=[['전체',m.total+'사이클'],['기본 대비',fx(sp,1)+'배'],['IL',m.IL],['II',m.II===null?'—':m.II],['곱셈기',U+'개'],['DSP 추정',m.dsp],['메모리 뱅크',m.full?'0 (레지스터 '+m.nArr*N+'개)':m.bram]]
+      .map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const rep=[];
+    if(!pipe)rep.push(['','PIPELINE이 없어서 반복 하나가 끝나야 다음 반복이 시작됩니다. 반복마다 루프 제어에 1사이클이 더 듭니다.']);
+    else{
+      if(m.II===pipe)rep.push(['ok','목표 II='+pipe+'를 달성했습니다.']);
+      else rep.push(['bad','목표 II='+pipe+'를 달성하지 못했습니다. 실제 II='+m.II+'.']);
+      if(m.IIres>pipe)rep.push(['bad','자원 제약: 반복마다 배열 하나에서 '+U+'개를 읽어야 하는데 포트는 '+(m.full?'∞':2*(+P))+'개입니다. 최소 II='+m.IIres+'.']);
+      if(m.IIrec>pipe)rep.push(['bad','의존성 제약: '+(K==='dot'?'sum':'p[]')+'에 더하려면 앞 반복의 덧셈('+ADD+'사이클'+(K==='dot'&&U>1?' × '+U+'번 줄줄이':'')+')이 끝나야 합니다. 최소 II='+m.IIrec+'.']);
+    }
+    if(U>1&&!m.full&&m.mx>0&&!pipe)rep.push(['warn','UNROLL로 곱셈기는 '+U+'개가 됐지만, 메모리 포트가 모자라 읽기에만 '+(m.mx+LD)+'사이클이 걸립니다.']);
+    if(U===1&&P!=='1')rep.push(['warn','배열을 쪼갰지만 한 번에 원소 하나만 읽으니 늘어난 포트를 쓰지 않습니다. 메모리만 낭비합니다.']);
+    $('#krep').innerHTML=rep.map(([c,t])=>'<p class="msg '+c+'" style="margin:6px 0">'+t+'</p>').join('');
+    // 간트
+    const rows=Math.min(m.iters,8),gap=pipe?m.II:m.IL+1,last=(rows-1)*gap+m.IL+1;
+    const cw=Math.max(3,Math.min(22,Math.floor(560/last))),lw=54,rh=22,W=Math.max(lw+last*cw+10,430),H=22+rows*rh+30;
+    let g='<svg class="sch" style="min-width:'+Math.min(W,500)+'px;max-width:'+W+'px" viewBox="0 0 '+W+' '+H+'">';
+    const step=last>60?10:5;
+    for(let t=0;t<=last;t+=step)g+='<line x1="'+(lw+t*cw)+'" y1="16" x2="'+(lw+t*cw)+'" y2="'+(22+rows*rh)+'" style="stroke:var(--grid)"/><text x="'+(lw+t*cw)+'" y="12" text-anchor="middle" class="m dim" style="font-size:10px">'+t+'</text>';
+    for(let i=0;i<rows;i++){
+      const s0=i*gap,y=22+i*rh;g+='<text x="'+(lw-6)+'" y="'+(y+14)+'" text-anchor="end" class="m dim" style="font-size:11px">반복'+i+'</text>';
+      const seg=[['LD',0,LD+m.mx],['MUL',LD+m.mx,MUL],['ADD',LD+m.mx+MUL,ADD*m.addN]];if(K==='vec')seg.push(['ST',LD+m.mx+MUL+ADD,ST]);
+      seg.forEach(([n,a,d])=>{g+='<rect x="'+(lw+(s0+a)*cw)+'" y="'+(y+3)+'" width="'+Math.max(1,d*cw-1)+'" height="'+(rh-6)+'" style="fill:'+pal[n]+'"/>';
+        if(d*cw>24)g+='<text x="'+(lw+(s0+a+d/2)*cw)+'" y="'+(y+15)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:10px">'+n+'</text>';});
+    }
+    let lx=lw;[['LD','읽기'],['MUL','곱셈'],['ADD','덧셈'],['ST','쓰기']].forEach(([k,t])=>{if(k==='ST'&&K!=='vec')return;g+='<rect x="'+lx+'" y="'+(H-16)+'" width="12" height="10" style="fill:'+pal[k]+'"/><text x="'+(lx+16)+'" y="'+(H-7)+'" style="font-size:11px">'+t+'</text>';lx+=64;});
+    if(m.iters>rows)g+='<text x="'+(W-4)+'" y="'+(H-7)+'" text-anchor="end" class="dim" style="font-size:11px">… 총 '+m.iters+'번 반복</text>';
+    $('#kgantt').innerHTML=g+'</svg>';
+    drawHW(m);
+  }
+  function drawHW(m){
+    const Pb=m.full?1:+P,lanes=U,LH=28,banks=2*Pb,BH=24;
+    const h=Math.max(lanes*LH,banks*BH)+(K==='dot'?60:30);
+    const H=h+20;$('#khw').setAttribute('viewBox','0 0 560 '+H);
+    let s='';
+    const ly=i=>20+i*LH,by=j=>14+j*BH;
+    for(let j=0;j<banks;j++){const arr=j<Pb?'a':'b',k=j%Pb;const lab=m.full?arr+'[0..63] 레지스터':arr+(Pb>1?k:'')+' BRAM';
+      s+='<rect x="8" y="'+by(j)+'" width="120" height="20" rx="2" class="box" style="fill:var(--sheet2)"/><text x="68" y="'+(by(j)+14)+'" text-anchor="middle" class="m" style="font-size:11px">'+lab+'</text>';}
+    for(let i=0;i<lanes;i++){
+      const y=ly(i);
+      [0,1].forEach(t=>{const j=t*Pb+(m.full?0:i%Pb);s+='<path d="M128 '+(by(j)+10)+' C170 '+(by(j)+10)+' 170 '+(y+10)+' 200 '+(y+10)+'" class="thin" style="stroke:var(--lo)"/>';});
+      s+='<rect x="200" y="'+y+'" width="34" height="20" rx="2" style="fill:var(--p1)"/><text x="217" y="'+(y+15)+'" text-anchor="middle" style="fill:var(--onacc);font-size:13px">×</text>';
+      s+='<path d="M234 '+(y+10)+' H270" class="thin"/>';
+      s+='<rect x="270" y="'+y+'" width="34" height="20" rx="2" style="fill:var(--p2)"/><text x="287" y="'+(y+15)+'" text-anchor="middle" style="fill:var(--onacc);font-size:13px">+</text>';
+      if(K==='vec'){const j=m.full?0:i%Pb,cy=14+j*BH+10;s+='<path d="M304 '+(y+10)+' C328 '+(y+10)+' 328 '+cy+' 350 '+cy+'" class="thin"/>';if(i===0)s+='<text x="320" y="'+(y-4)+'" class="m dim" style="font-size:10.5px">+k</text>';}
+      if(K==='dot'&&i>0)s+='<path d="M287 '+(ly(i-1)+20)+' V'+y+'" class="thin" style="stroke:var(--bad);stroke-width:1.8"/>';
+      if(K==='dot4')s+='<path d="M304 '+(y+10)+' C330 '+(y+10)+' 330 '+(20+(i%4)*LH+10)+' 360 '+(20+(i%4)*LH+10)+'" class="thin"/>';
+    }
+    if(K==='vec'){const cb=Pb;for(let j=0;j<cb;j++){s+='<rect x="350" y="'+(14+j*BH)+'" width="110" height="20" rx="2" class="box" style="fill:var(--sheet2)"/><text x="405" y="'+(28+j*BH)+'" text-anchor="middle" class="m" style="font-size:11px">'+(m.full?'c[0..63] 레지스터':'c'+(Pb>1?j:'')+' BRAM')+'</text>';}}
+    if(K==='dot'){const y=ly(lanes-1)+34;s+='<rect x="262" y="'+y+'" width="50" height="22" rx="2" class="box"/><text x="287" y="'+(y+15)+'" text-anchor="middle" class="m" style="font-size:11px">sum</text>';
+      s+='<path d="M287 '+(ly(lanes-1)+20)+' V'+y+'" class="thin" style="stroke:var(--bad);stroke-width:1.8"/><path d="M312 '+(y+11)+' H330 V12 H287 V20" class="thin" style="stroke:var(--bad);stroke-width:1.8"/>';
+      s+='<text x="340" y="'+(y+15)+'" style="font-size:11.5px;fill:var(--bad)">덧셈이 줄줄이 이어진 사슬 + 되먹임</text>';}
+    if(K==='dot4'){for(let j=0;j<4;j++){const y=20+j*LH;s+='<rect x="360" y="'+y+'" width="44" height="20" rx="2" class="box"/><text x="382" y="'+(y+14)+'" text-anchor="middle" class="m" style="font-size:11px">p['+j+']</text>';}
+      s+='<path d="M404 30 H420 V'+(20+3*LH+10)+' M404 '+(20+LH+10)+' H420 M404 '+(20+2*LH+10)+' H420 M404 '+(20+3*LH+10)+' H420 M420 '+(20+1.5*LH+10)+' H440" class="thin"/><rect x="440" y="'+(20+1.5*LH)+'" width="80" height="20" rx="2" class="box"/><text x="480" y="'+(34+1.5*LH)+'" text-anchor="middle" style="font-size:11px">마지막 합</text>';}
+    $('#khw').innerHTML=s;
+  }
+  segBind('k_sel',v=>{K=v;draw();});segBind('k_pipe',v=>{pipe=+v;draw();});segBind('k_u',v=>{U=+v;draw();});segBind('k_p',v=>{P=v;draw();});
+  draw();
+})();
+
+(()=>{ // 실험 7-2
+  const P={vec:{c:'for (i = 0; i < N; i++) {\n#pragma HLS PIPELINE II=1\n#pragma HLS UNROLL factor=4\n  c[i] = a[i] * b[i] + k;\n}',v:[4,1,4,4,0,1],n:'a에서 4개를 읽는데 포트는 2개'},
+    dot:{c:'for (i = 0; i < N; i++) {\n#pragma HLS PIPELINE II=1\n  sum += a[i] * b[i];        // float 덧셈 4사이클\n}',v:[1,1,1,1,4,1],n:'sum이 바로 앞 반복의 덧셈(4사이클)을 기다림'},
+    dot4:{c:'for (i = 0; i < N; i++) {\n#pragma HLS PIPELINE II=1\n  p[i % 4] += a[i] * b[i];   // 네 번째 앞 반복의 결과를 씀\n}',v:[1,1,1,1,4,4],n:'거리 4로 고리가 느슨해짐'},
+    d2:{c:'for (i = 2; i < N; i++) {\n#pragma HLS PIPELINE II=1\n  a[i] = a[i-2] * c + x[i];  // 곱셈 3 + 덧셈 1\n}',v:[1,1,1,1,4,2],n:'두 번째 앞 반복의 결과를 쓰므로 거리 2'},
+    hist:{c:'for (i = 0; i < N; i++) {\n#pragma HLS PIPELINE II=1\n  hist[in[i]]++;             // 읽기 1 + 더하기 1 + 쓰기 1\n}',v:[1,1,1,1,3,1],n:'주소를 모르니 바로 앞 반복과 같은 칸이라고 가정 (8장)'}};
+  const ids=['ii_r','ii_b','ii_m','ii_k','ii_d','ii_s'];
+  segBind('ii_p',k=>{P[k].v.forEach((x,i)=>$('#'+ids[i]).value=x);$('#iicode').innerHTML=codeLines(P[k].c);$('#iimsg').dataset.n=P[k].n;draw();});
+  ids.forEach(id=>onInput(id,draw));
+  function draw(){
+    const [r,b,m,k,d,s]=ids.map(id=>+$('#'+id).value);
+    $('#ii_rv').textContent=r+'번';$('#ii_bv').textContent=b+'개';$('#ii_mv').textContent=m+'번';$('#ii_kv').textContent=k+'개';$('#ii_dv').textContent=d?d+'사이클':'없음';$('#ii_sv').textContent=s;
+    const im=Math.ceil(r/(2*b)),iu=Math.ceil(m/k),ir=d?Math.ceil(d/s):1,ii=Math.max(im,iu,ir,1);
+    const items=[['메모리 ⌈'+r+'÷'+(2*b)+'⌉',im],['곱셈기 ⌈'+m+'÷'+k+'⌉',iu],['재귀 '+(d?'⌈'+d+'÷'+s+'⌉':'(고리 없음)'),ir]];
+    let sv='';items.forEach(([n,v],i)=>{const y=10+i*36,w=v/Math.max(ii,4)*300,top=v===ii&&ii>1;
+      sv+='<text x="8" y="'+(y+16)+'" class="m" style="font-size:12px">'+n+'</text><rect x="190" y="'+y+'" width="'+Math.max(3,w)+'" height="22" rx="2" style="fill:'+(top?'var(--bad)':'var(--trace)')+'"/><text x="'+(196+w)+'" y="'+(y+16)+'" class="m" style="font-size:12px;font-weight:600">'+v+'</text>';});
+    $('#iisvg').innerHTML=sv;
+    const who=items.filter(x=>x[1]===ii).map(x=>x[0].split(' ')[0]);
+    $('#iimsg').className='msg'+(ii===1?' ok':'');
+    $('#iimsg').innerHTML='II = max('+im+', '+iu+', '+ir+') = <b>'+ii+'</b>. '+(ii===1?'모든 제약이 1 이하라 매 사이클 새 반복을 시작합니다.':'병목은 '+who.join(', ')+'입니다.')+($('#iimsg').dataset.n?' ('+$('#iimsg').dataset.n+')':'');
+  }
+  $('#iicode').innerHTML=codeLines(P.vec.c);$('#iimsg').dataset.n=P.vec.n;draw();
+})();
+
+(()=>{ // 실험 7-3
+  const C={
+    orig:'void fir(int *y, int x) {\n  static int shift_reg[N];\n  int acc = 0;\n  for (int i = N - 1; i >= 0; i--) {\n    if (i == 0) {                 // 마지막 반복에서만 참\n      acc += x * c[0];\n      shift_reg[0] = x;\n    } else {\n      shift_reg[i] = shift_reg[i - 1];\n      acc += shift_reg[i] * c[i];\n    }\n  }\n  *y = acc;\n}',
+    hoist:'void fir(int *y, int x) {\n  static int shift_reg[N];\n  int acc = 0;\n  for (int i = N - 1; i > 0; i--) {\n#pragma HLS PIPELINE II=1\n    shift_reg[i] = shift_reg[i - 1];\n    acc += shift_reg[i] * c[i];\n  }\n  acc += x * c[0];               // 조건문을 루프 밖으로\n  shift_reg[0] = x;\n  *y = acc;\n}',
+    fiss:'void fir(int *y, int x) {\n  static int shift_reg[N];\n#pragma HLS ARRAY_PARTITION variable=shift_reg complete\n  int acc = 0;\n  TDL: for (int i = N - 1; i > 0; i--) {\n#pragma HLS UNROLL\n    shift_reg[i] = shift_reg[i - 1];   // 시프트만: 펼쳐서 시프트 레지스터로\n  }\n  shift_reg[0] = x;\n  MAC: for (int i = N - 1; i >= 0; i--) {\n#pragma HLS PIPELINE II=1\n    acc += shift_reg[i] * c[i];        // 곱셈-누산만: 파이프라인\n  }\n  *y = acc;\n}'};
+  const T={orig:[['루프 몸체의 조건문','있음 (매 반복 검사)'],['shift_reg 위치','BRAM (한 반복에 읽기 1, 쓰기 1)'],['파이프라인','조건문 때문에 몸체가 반복마다 달라 어렵다'],['샘플당 사이클 (N=11, 대략)','약 45']],
+    hoist:[['루프 몸체의 조건문','없음'],['shift_reg 위치','BRAM'],['파이프라인','II=1 가능'],['샘플당 사이클 (N=11, 대략)','약 16']],
+    fiss:[['루프 몸체의 조건문','없음'],['shift_reg 위치','레지스터 11개 (시프트 레지스터)'],['파이프라인','TDL은 1사이클, MAC은 II=1'],['샘플당 사이클 (N=11, 대략)','약 15, 그리고 MAC을 더 펼칠 수 있음']]};
+  const M={orig:'조건문이 마지막 반복에만 참인데도 하드웨어는 매 반복 검사하고, 두 갈래 회로를 모두 만듭니다.',hoist:'의미는 같고 루프 몸체가 매 반복 똑같아져서 PIPELINE II=1이 걸립니다.',fiss:'시프트와 곱셈-누산이 다른 루프가 되어 각각에 맞는 지시어를 줄 수 있습니다. 이제 MAC 루프에 UNROLL을 더하면 곱셈기를 늘려 더 빨라집니다(10장의 B 구현).'};
+  let k='orig';segBind('rs_k',v=>{k=v;draw();});
+  function draw(){const pl=C[k].split('\n').map((l,i)=>l.startsWith('#pragma')||l.includes('// ')?i:-1).filter(i=>i>=0);$('#rscode').innerHTML=codeLines(C[k],pl);
+    $('#rstab').innerHTML=T[k].map(([a,b])=>'<tr><th style="width:42%">'+a+'</th><td>'+b+'</td></tr>').join('');$('#rsmsg').innerHTML=M[k];}
+  draw();
+})();
+
+(()=>{ // 실험 7-4
+  let k='in',pt=0;segBind('nl_k',v=>{k=v;draw();});segBind('nl_p',v=>{pt=+v;draw();});
+  const LD=2,MU=2,AD=1,IL=LD+MU+AD;
+  function model(k,pt){
+    if(k==='none')return {cyc:8*(8*(IL+1)+2),mul:1,ii:'—',note:'파이프라인 없음'};
+    if(k==='in')return {cyc:8*((8-1)*1+IL+2)+8,mul:1,ii:1,note:'안쪽 II=1, 바깥 반복마다 채우기/비우기'};
+    if(k==='flat')return {cyc:(64-1)*1+IL+2,mul:1,ii:1,note:'64번짜리 루프 하나, II=1'};
+    const ii=pt?1:Math.ceil(8/2),ilo=LD+MU+3;return {cyc:(8-1)*ii+ilo+2,mul:8,ii,note:pt?'안쪽 8개가 펼쳐지고 한 사이클에 8개를 읽음':'안쪽이 펼쳐졌지만 M과 x를 한 사이클에 2개씩만 읽어 II='+ii};
+  }
+  function draw(){
+    const r=model(k,pt);
+    let c='ROW: for (int i = 0; i < 8; i++) {\n'+(k==='out'?'#pragma HLS PIPELINE II=1\n':'')+'  int acc = 0;\n  COL: for (int j = 0; j < 8; j++) {\n'+(k==='in'||k==='flat'?'#pragma HLS PIPELINE II=1\n':'')+'    acc += M[i][j] * x[j];\n  }\n  y[i] = acc;\n}';
+    if(k==='flat')c='// 두 루프를 하나로 (도구가 자동으로 합치기도 함)\nfor (int t = 0; t < 64; t++) {\n#pragma HLS PIPELINE II=1\n  int i = t / 8, j = t % 8;\n  acc = (j == 0 ? 0 : acc) + M[i][j] * x[j];\n  if (j == 7) y[i] = acc;\n}';
+    if(pt)c='#pragma HLS ARRAY_PARTITION variable=M dim=2 complete\n#pragma HLS ARRAY_PARTITION variable=x complete\n'+c;
+    const pl=c.split('\n').map((l,i)=>l.startsWith('#pragma')?i:-1).filter(i=>i>=0);$('#nlcode').innerHTML=codeLines(c,pl);
+    const all=['none','in','out','flat'].map(x=>[x,model(x,pt)]),mx=Math.max(...all.map(a=>a[1].cyc));
+    const nm={none:'없음',in:'안쪽',out:'바깥',flat:'합치기'};let s='';
+    all.forEach(([x,m],i)=>{const y=10+i*32,w=m.cyc/mx*300,on=x===k;s+='<text x="8" y="'+(y+15)+'" class="m" style="font-size:12px;'+(on?'font-weight:600;fill:var(--accent)':'')+'">'+nm[x]+'</text><rect x="70" y="'+y+'" width="'+Math.max(2,w)+'" height="20" rx="2" style="fill:'+(on?'var(--accent)':'var(--lo)')+'"/><text x="'+(76+w)+'" y="'+(y+15)+'" class="m" style="font-size:11.5px">'+m.cyc+'사이클, 곱셈기 '+m.mul+'</text>';});
+    $('#nlsvg').innerHTML=s;
+    $('#nlmsg').innerHTML=r.note+'. '+(k==='out'&&!pt?'바깥 루프를 파이프라인하면 곱셈기는 8개가 되지만, 8장에서 본 것처럼 메모리를 쪼개지 않으면 그만큼 빨라지지 않습니다.':k==='out'?'가장 빠르지만 곱셈기 8개와 쪼갠 메모리가 필요합니다.':k==='in'?'곱셈기 하나로 꽤 빠르지만, 바깥 반복마다 '+IL+'사이클씩 파이프라인을 다시 채웁니다.':k==='flat'?'곱셈기 하나로 채우기/비우기를 한 번만 합니다.':'반복마다 이전 반복이 끝나기를 기다립니다.');
+  }
+  draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'반복 64번, IL=10, 파이프라인 II=2인 루프의 전체 사이클은 대략?',o:['74','136','640','20'],a:1,e:'맞습니다. (64 − 1) × 2 + 10 = 136입니다. 파이프라인이 없으면 64 × 10 = 640 남짓입니다.'},
+  {q:'내적 루프에 UNROLL factor=4만 추가해도 빨라지지 않는 주된 이유는?',o:['곱셈기가 부족해서','sum에 대한 덧셈이 앞의 결과를 기다리는 사슬이라서','배열이 너무 커서'],a:1,e:'맞습니다. 펼친 네 덧셈이 모두 같은 sum에 차례로 더해지므로 사슬이 4배 길어질 뿐입니다. 부분합으로 사슬을 끊어야 합니다.'},
+  {q:'포트 2개짜리 메모리로 된 배열에서 매 사이클 원소 4개를 읽으려면 cyclic 분할을 몇 개로 해야 하나요?',o:['1','2','4','8'],a:1,e:'맞습니다. 2개로 쪼개면 메모리 2개 × 포트 2개 = 4개를 한 사이클에 읽을 수 있습니다.'},
+  {q:'루프 안에 <code>if (i == 0)</code>처럼 한 반복에서만 참인 조건이 있습니다. 먼저 해 볼 일은?',o:['UNROLL을 더 크게 준다','그 부분을 루프 밖으로 꺼내 루프 몸체를 매 반복 같게 만든다','클럭을 낮춘다'],a:1,e:'맞습니다. 조건문 빼내기(code hoisting)로 몸체가 균일해지면 파이프라인과 펼치기가 쉬워집니다.'},
+  {q:'중첩 루프의 바깥 루프에 PIPELINE을 주면 안쪽 루프는?',o:['그대로 순서대로 돈다','모두 펼쳐진다','합성에서 빠진다'],a:1,e:'맞습니다. 바깥 반복을 매 사이클 시작하려면 안쪽 반복 전체가 동시에 일어나야 하므로 완전히 펼쳐집니다. 메모리 분할이 함께 필요합니다.'},
+  {q:'LOOP_TRIPCOUNT 지시어의 효과는?',o:['반복 횟수를 고정한다','리포트에 쓸 예상 반복 횟수를 알려 줄 뿐 회로는 바꾸지 않는다','루프를 펼친다'],a:1,e:'맞습니다. 경계가 변수인 루프의 latency를 리포트에서 읽을 수 있게 해 주는 정보일 뿐입니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch06-hls.html"><span>이전</span>6장. HLS: C가 회로가 되는 과정</a><a class="nx" href="ch08-memory.html"><span>다음</span>8장. 메모리와 의존성</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li class="on">7장. HLS 루프 지시어</li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5장. 동기와 비동기 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">5장</span><span class="dots" aria-label="12장 중 5장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L120.5,58 L124.5,40 L181.8,40 L185.8,58 L243.0,58 L247.0,40 L365.5,40 L369.5,58 L426.8,58 L430.8,40 L488.0,40 L492.0,58 L610.5,58 L614.5,40 L794.2,40 L798.2,58 L855.5,58 L859.5,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><div class="num">5장</div><h1>동기와 비동기</h1><p class="lede">리셋, 서로 다른 클럭 사이의 신호, 메타스테이빌리티, 그레이 코드와 비동기 FIFO를 다룹니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">5.1</span>리셋: 동기와 비동기</h2>
+<p>지금까지 모든 신호는 클럭 엣지에 맞춰 움직였습니다. 이런 신호를 <b>동기</b>(synchronous) 신호라고 합니다. 반대로 클럭과 상관없이 아무 때나 바뀌는 신호가 <b>비동기</b>(asynchronous) 신호입니다. 버튼, 외부 칩에서 오는 신호, 다른 클럭으로 동작하는 회로의 출력이 모두 비동기입니다.</p>
+<p>가장 먼저 만나는 예가 리셋입니다. 리셋을 클럭 엣지에서만 확인하는 방식이 <b>동기 리셋</b>, 리셋이 들어오는 즉시 레지스터를 지우는 방식이 <b>비동기 리셋</b>입니다. 코드에서는 감지 목록(sensitivity list)에 리셋이 들어가는지로 구분합니다.</p>
+<pre class="code">
+// 동기 리셋: 엣지에서만 rst를 본다
+always @(posedge clk)
+  if (rst) q &lt;= 0;
+  else     q &lt;= q + 1;
+
+// 비동기 리셋: rst가 올라가는 즉시 동작
+always @(posedge clk or posedge rst)
+  if (rst) q &lt;= 0;
+  else     q &lt;= q + 1;
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-1</b><span>리셋 펄스를 움직여 보기</span></figcaption>
+<div class="body">
+<p class="hint">카운터 q는 5에서 시작해 매 엣지마다 1씩 늘어납니다. 한 사이클은 8칸으로 나눠 그렸습니다.</p>
+<label class="sl"><span>리셋 시작</span><input type="range" id="r1s" min="1" max="56" value="18"><output id="r1sv"></output></label>
+<label class="sl"><span>리셋 폭</span><input type="range" id="r1w" min="1" max="24" value="4"><output id="r1wv"></output></label>
+<div class="scroll" id="r1wave"></div>
+<p class="msg" id="r1msg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>비동기 리셋은 짧은 펄스도 놓치지 않고, 클럭이 멈춰 있어도 동작한다는 장점이 있습니다. 그런데 리셋을 <b>푸는</b> 순간이 클럭 엣지와 겹치면, 어떤 플립플롭은 이번 엣지부터 동작하고 어떤 것은 다음 엣지부터 동작하는 일이 생깁니다. 그래서 실무에서는 “들어갈 때는 비동기로, 나올 때는 클럭에 맞춰서” 리셋을 거는 <b>리셋 동기화기</b>를 씁니다.</p>
+<pre class="code">
+// 비동기로 걸리고, 동기로 풀리는 리셋
+always @(posedge clk or negedge arst_n)
+  if (!arst_n) begin s1 &lt;= 0; s2 &lt;= 0; end
+  else         begin s1 &lt;= 1; s2 &lt;= s1; end
+assign rst_n = s2;   // 회로 전체는 이 rst_n을 쓴다
+</pre>
+
+<h2><span class="sec">5.2</span>메타스테이빌리티</h2>
+<p>2장에서 setup/hold를 지켜야 한다고 했습니다. 그런데 비동기 신호는 언제 바뀔지 모르니 이 약속을 지킬 방법이 없습니다. D가 setup/hold 구간 안에서 바뀌면, 플립플롭 출력은 0도 1도 아닌 중간 전압에 한동안 머물다가 결국 어느 한쪽으로 떨어집니다. 언덕 꼭대기에 공을 올려놓은 것과 같습니다. 이 상태를 <b>메타스테이빌리티</b>라고 합니다.</p>
+<p>공이 언제 떨어질지는 꼭대기에서 얼마나 가까웠는지에 달렸고, 정확히 꼭대기라면 이론상 영원히 걸립니다. 해결책은 간단합니다. 첫 플립플롭이 결정을 내릴 시간을 한 클럭 통째로 주고, 그 결과를 두 번째 플립플롭이 다시 받는 것입니다. 이것이 <b>2단 동기화기</b>(2-FF synchronizer)입니다.</p>
+<pre class="code">
+always @(posedge clk) begin
+  q1 &lt;= async_in;   // 메타스테이블이 될 수 있음
+  q2 &lt;= q1;         // 한 사이클 동안 결정될 시간을 준 뒤 받음
+end
+// 회로의 나머지는 q2만 쓴다
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-2</b><span>데이터가 바뀌는 순간을 엣지에 가까이</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>클럭 주기 5 ns, setup 0.20 ns, hold 0.10 ns로 가정합니다. 슬라이더는 비동기 입력 D가 0→1로 바뀌는 시각입니다(첫 엣지 = 0 ns). 정확히 −0.050 ns에 맞추면 어떻게 될까요?</p>
+<label class="sl"><span>D가 바뀌는 시각</span><input type="range" id="m1d" min="-1" max="1" step="0.005" value="0.6"><output id="m1dv"></output></label>
+<div class="scroll"><svg id="m1svg" class="sch" viewBox="0 0 560 210" role="img" aria-label="메타스테이빌리티 파형"></svg></div>
+<p class="msg" id="m1msg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>동기화기가 실패할 확률은 0이 아니라 아주 작을 뿐입니다. 그래서 “평균 몇 년에 한 번 실패하는가”, 즉 <b>MTBF</b>(Mean Time Between Failures)로 따집니다.</p>
+<div class="math">MTBF = e<sup>t<sub>r</sub>/τ</sup> / (T<sub>0</sub> · f<sub>clk</sub> · f<sub>data</sub>)　(t<sub>r</sub>: 결정에 쓸 수 있는 시간, τ, T<sub>0</sub>: 공정 상수)</div>
+<p>t<sub>r</sub>가 지수에 들어 있다는 점이 핵심입니다. 플립플롭을 한 단 더 두어 t<sub>r</sub>에 한 클럭 주기가 더해지면 MTBF는 몇 배가 아니라 수십 자릿수가 늘어납니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-3</b><span>MTBF 계산기</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>τ = 50 ps, T<sub>0</sub> = 100 ps인 교육용 가정치입니다. 동기화기가 없으면(1단) 뒤따르는 논리 때문에 결정 시간이 주기의 5%뿐이라고 봅니다.</p>
+<div class="ctrl"><span class="lbl">동기화 FF 단 수</span><div class="seg" id="mt_n"><button data-v="1" aria-pressed="false">1단 (동기화 없음)</button><button data-v="2" aria-pressed="true">2단</button><button data-v="3" aria-pressed="false">3단</button></div></div>
+<label class="sl"><span>f<sub>clk</sub></span><input type="range" id="mt_fc" min="50" max="500" step="10" value="200"><output id="mt_fcv"></output></label>
+<label class="sl"><span>f<sub>data</sub></span><input type="range" id="mt_fd" min="1" max="100" step="1" value="10"><output id="mt_fdv"></output></label>
+<div class="stats" id="mt_stats"></div>
+<p class="msg" id="mt_msg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<div class="note warn"><b>여러 비트짜리 값은 이렇게 넘기면 안 된다</b>
+8비트 카운터 값을 비트마다 2단 동기화기로 넘기면, 0111→1000처럼 여러 비트가 동시에 바뀔 때 비트마다 다른 사이클에 넘어가서 엉뚱한 값(예: 1111)을 잠깐 보게 됩니다. 여러 비트는 한 번에 한 비트만 바뀌는 그레이 코드나, 아래의 비동기 FIFO로 넘깁니다.</div>
+
+<h2><span class="sec">5.3</span>여러 비트를 넘기는 법: 그레이 코드</h2>
+<p>위 주의 문단을 직접 확인해 보겠습니다. 클럭 A로 도는 4비트 카운터 값을 클럭 B 쪽에서 비트마다 동기화기로 받습니다. 칩 안에서 비트마다 배선 길이가 조금씩 달라서, 네 비트가 B 쪽에 도착하는 시각도 조금씩 어긋납니다.</p>
+<p><b>그레이 코드</b>는 이웃한 두 수가 항상 한 비트만 다르도록 만든 부호입니다(0000, 0001, 0011, 0010, 0110, …). 한 번에 한 비트만 바뀌므로, B가 바뀌는 순간에 걸려도 옛 값 아니면 새 값 둘 중 하나만 읽습니다.</p>
+<pre class="code">
+assign gray = bin ^ (bin >> 1);   // 이진수 → 그레이 코드
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-4</b><span>카운터를 다른 클럭으로 넘기기</span></figcaption>
+<div class="body">
+<p class="hint">클럭 A는 3 ns, 클럭 B는 3.7 ns 주기입니다. 카운터는 5부터 셉니다. B는 엣지마다 네 비트를 읽는데, 읽은 값이 바로 전 값이나 지금 값이면 ✓, 둘 다 아니면 ✗입니다(그레이 코드는 읽은 뒤 이진수로 되돌려 표시).</p>
+<div class="ctrl"><span class="lbl">넘기는 부호</span><div class="seg" id="g_mode"><button data-v="bin" aria-pressed="true">이진수</button><button data-v="gray" aria-pressed="false">그레이 코드</button></div></div>
+<label class="sl"><span>비트 사이 도착 시각 차이</span><input type="range" id="g_sk" min="0" max="1.2" step="0.05" value="0.6"><output id="g_skv"></output></label>
+<div class="scroll"><svg id="gsvg" class="sch" viewBox="0 0 560 236" role="img" aria-label="클럭 경계를 넘는 카운터"></svg></div>
+<div class="stats" id="gstats"></div>
+<p class="msg" id="gmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h3>비동기 FIFO</h3>
+<p>클럭이 다른 두 회로가 데이터를 많이 주고받을 때는 비동기 FIFO를 씁니다. 실무에서 클럭 경계를 넘는 데이터 대부분이 이 구조를 거칩니다.</p>
+<ul>
+<li>쓰는 쪽은 클럭 A로 메모리에 쓰고 쓰기 포인터를 늘립니다. 읽는 쪽은 클럭 B로 읽고 읽기 포인터를 늘립니다.</li>
+<li>FIFO가 비었는지 알려면 B 쪽이 쓰기 포인터를, 찼는지 알려면 A 쪽이 읽기 포인터를 알아야 합니다. 클럭 경계를 넘는 것은 이 두 포인터뿐입니다.</li>
+<li>포인터는 1씩 늘어나는 카운터이므로, 그레이 코드로 바꾼 뒤 2단 동기화기로 넘깁니다. 위 실험과 똑같습니다.</li>
+</ul>
+<p>데이터 자체는 메모리에 머물러 있다가 포인터가 넘어간 뒤에 읽히므로 동기화기가 필요 없습니다. 넘겨받은 포인터가 한두 사이클 늦을 수는 있지만, 그 결과는 “아직 비었다고 본다” 또는 “아직 찼다고 본다”처럼 항상 안전한 쪽으로만 틀립니다.</p>
+
+<p>포인터에는 칸 수보다 한 비트를 더 둡니다. 4칸 FIFO라면 포인터가 3비트이고, 아래 두 비트는 칸 번호, 맨 위 비트는 “몇 바퀴째인가”입니다. 두 포인터가 완전히 같으면 비었고, 칸 번호는 같은데 맨 위 비트만 다르면 쓰는 쪽이 한 바퀴 앞서 있다는 뜻이므로 꽉 찬 것입니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-5</b><span>FIFO 포인터로 비었는지, 찼는지 판단하기</span></figcaption>
+<div class="body">
+<div class="ctrl"><button id="ff_w" class="pri">쓰기</button><button id="ff_r">읽기</button><button id="ff_x">처음으로</button></div>
+<div class="scroll"><svg id="ffsvg" class="sch" viewBox="0 0 560 190" role="img" aria-label="4칸 FIFO와 포인터"></svg></div>
+<p class="msg" id="ffmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>실제 비동기 FIFO에서는 이 비교를 그레이 코드로 넘겨받은 포인터로 합니다. 넘겨받은 포인터는 2단 동기화기 때문에 몇 사이클 늦으므로, 쓰는 쪽은 실제보다 “더 찼다”고, 읽는 쪽은 “더 비었다”고 봅니다. 둘 다 안전한 쪽입니다.</p>
+
+<h2><span class="sec">5.4</span>짧은 펄스 넘기기</h2>
+<p>빠른 클럭 A에서 한 사이클짜리 펄스(“이벤트가 한 번 일어났다”)를 느린 클럭 B로 넘긴다고 해 봅시다. 2단 동기화기를 그대로 달면, 펄스가 B의 엣지 사이에서 시작해서 끝나 버려 B가 아예 보지 못할 수 있습니다. 5.1의 동기 리셋이 짧은 펄스를 놓친 것과 같은 이유입니다.</p>
+<p>해결책은 펄스를 <b>레벨 변화</b>로 바꾸는 것입니다. A 쪽에서 펄스가 올 때마다 신호 하나를 뒤집고(토글), B 쪽은 그 신호를 동기화한 뒤 “바뀌었는가”를 봅니다. 레벨은 다음 펄스가 올 때까지 유지되므로 B가 놓치지 않습니다. 대신 펄스 사이 간격이 B 클럭 두세 사이클보다는 길어야 합니다.</p>
+<pre class="code">
+// A 쪽
+always @(posedge clk_a) if (pulse_a) tgl &lt;= ~tgl;
+// B 쪽
+always @(posedge clk_b) begin
+  s1 &lt;= tgl;  s2 &lt;= s1;  s3 &lt;= s2;   // 2단 동기화 + 이전 값
+end
+assign pulse_b = s2 ^ s3;           // 바뀐 순간 한 사이클 펄스
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-6</b><span>빠른 쪽의 펄스를 느린 쪽에서 세기</span></figcaption>
+<div class="body">
+<p class="hint">클럭 A는 2 ns, 클럭 B는 5 ns 주기입니다. A 쪽에서 펄스를 일정한 간격으로 8번 보냅니다.</p>
+<label class="sl"><span>펄스 간격 (A 사이클)</span><input type="range" id="pl_g" min="1" max="10" value="4"><output id="pl_gv"></output></label>
+<div class="scroll"><svg id="plsvg" class="sch" viewBox="0 0 560 220" role="img" aria-label="펄스 동기화 파형"></svg></div>
+<div class="stats" id="plstats"></div>
+<p class="msg" id="plmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">5.5</span>클럭은 논리로 만들지 않는다</h2>
+<p>초보자가 가장 자주 하는 실수는 “일부 레지스터만 가끔 동작시키려고” 클럭을 AND 게이트로 막거나, 카운터로 클럭을 나눠 새 클럭을 만드는 것입니다.</p>
+<pre class="code">
+// 나쁜 예 1: 게이트로 막은 클럭
+assign gclk = clk &amp; en;
+always @(posedge gclk) q &lt;= q + 1;
+
+// 나쁜 예 2: 논리로 나눈 클럭
+always @(posedge clk) half &lt;= ~half;
+always @(posedge half) r &lt;= r + 1;
+
+// 좋은 예: 클럭은 하나, 대신 enable
+always @(posedge clk) if (en) q &lt;= q + 1;
+</pre>
+<p>논리로 만든 클럭은 2장의 전용 클럭망을 타지 못해 skew가 커지고, 타이밍 도구가 원래 클럭과의 관계를 제대로 따지기 어렵습니다. 무엇보다 게이트로 막은 클럭은 en이 바뀌는 순간에 따라 글리치가 생겨, 레지스터가 엉뚱한 엣지에서 움직입니다. 정말 다른 주파수가 필요하면 PLL 같은 전용 클럭 회로를 쓰고, 정말 클럭을 멈춰야 하면(전력 절감) 전용 클럭 버퍼를 씁니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 5-7</b><span>게이트로 막은 클럭 vs enable</span></figcaption>
+<div class="body">
+<p class="hint">en이 잠깐 0이 되었다가 돌아옵니다. 한 사이클을 8칸으로 그렸습니다. en이 바뀌는 시각을 클럭이 1인 구간에 넣어 보세요.</p>
+<label class="sl"><span>en이 0이 되는 시각</span><input type="range" id="cg_a" min="9" max="40" value="13"><output id="cg_av"></output></label>
+<label class="sl"><span>0인 동안의 길이</span><input type="range" id="cg_w" min="1" max="20" value="12"><output id="cg_wv"></output></label>
+<div class="scroll" id="cgwave"></div>
+<p class="msg" id="cgmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<div class="recap"><b>이 장의 요점</b><ul><li>클럭이 다른 신호는 2단 동기화기로 받습니다. 실패 확률은 0이 아니라 아주 작을 뿐이고 MTBF로 따집니다.</li><li>여러 비트는 그레이 코드나 비동기 FIFO로, 짧은 펄스는 토글 방식으로 넘깁니다.</li><li>클럭을 논리로 만들지 말고 enable을 씁니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 책은 클럭 하나로 도는 HLS 설계를 주로 다룹니다. 9장 Video Systems의 스트리밍 입출력 뒤에 이런 FIFO와 동기화기가 있다는 것을 알고 읽으면 됩니다.</p></div>
+<h2><span class="sec">5.6</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{ // 실험 5-1
+  const R=8,C=8,N=R*C;
+  function draw(){
+    const s0=+$('#r1s').value,w=+$('#r1w').value;
+    $('#r1sv').textContent=fx(s0/R,2)+' 사이클';$('#r1wv').textContent=fx(w/R,2)+' 사이클';
+    const rst=[];for(let t=0;t<N;t++)rst.push(t>=s0&&t<s0+w?1:0);
+    const qs=[],qa=[];let a=5,b=5,syncHit=false,asyncHit=false;
+    for(let t=0;t<N;t++){
+      if(t>0&&t%R===0){if(rst[t-1]){a=0;syncHit=true;}else a++;}
+      if(rst[t]){b=0;asyncHit=true;}else if(t>0&&t%R===0)b++;
+      qs.push(a);qa.push(b);
+    }
+    $('#r1wave').innerHTML=wave([{n:'clk',t:'clk'},{n:'rst',t:'b',v:rst,col:'var(--bad)'},{n:'q 동기',t:'v',v:qs},{n:'q 비동기',t:'v',v:qa}],{cycles:C,res:R,cw:60,lw:78});
+    const rel=s0+w,near=(rel%R===0)||(rel%R===R-1);
+    const m=$('#r1msg');
+    if(!syncHit){m.className='msg warn';m.innerHTML='리셋 펄스가 두 클럭 엣지 사이에서 끝나 버려서 <b>동기 리셋은 리셋을 보지 못했습니다</b>. 비동기 리셋은 즉시 0으로 지웠습니다.';}
+    else if(near&&rel<N){m.className='msg bad';m.innerHTML='리셋이 클럭 엣지와 거의 같은 순간에 풀립니다. 비동기 리셋에서는 플립플롭마다 풀리는 엣지가 달라질 수 있습니다(recovery/removal 위반). 리셋 동기화기가 필요한 이유입니다.';}
+    else{m.className='msg';m.innerHTML='동기 리셋은 다음 클럭 엣지에서야 0이 되고, 비동기 리셋은 rst가 올라가는 즉시 0이 됩니다.';}
+  }
+  onInput('r1s',draw);onInput('r1w',draw);draw();
+})();
+
+(()=>{ // 실험 5-2
+  const T=5,tsu=0.2,th=0.1,tcq=0.3,c=(th-tsu)/2,half=(tsu+th)/2,tau=1.0;
+  function draw(){
+    const d=+$('#m1d').value;$('#m1dv').textContent=(d>0?'+':'')+fx(d,3)+' ns';
+    const t0=-1.5,t1=11.5,X=t=>70+(t-t0)*(480/(t1-t0));
+    // Q1: 구간 리스트 [t, level]
+    let q1=[[t0,0]],q2=[[t0,0]],meta1=null,res1=null,meta2=false;
+    if(d<-tsu){q1.push([tcq,1]);}
+    else if(d>th){q1.push([T+tcq,1]);}
+    else{const dist=Math.abs(d-c),tr=dist<1e-9?99:tau*Math.log(half/dist);
+      const v=d<c?1:0;meta1=[tcq,tcq+tr];q1.push([tcq,0.5]);
+      if(v===1)q1.push([tcq+tr,1]);else{q1.push([tcq+tr,0]);if(tcq+tr<T)q1.push([T+tcq,1]);}
+      res1=tcq+tr;}
+    // Q2: 엣지 T에서 Q1 샘플
+    const q1At=t=>{let l=0;for(const [tt,v] of q1)if(tt<=t)l=v;return l;};
+    if(meta1&&res1>T-tsu){meta2=true;q2.push([T+tcq,0.5]);}
+    else{const v=q1At(T-tsu);if(v===1)q2.push([T+tcq,1]);else q2.push([2*T+tcq,1]);}
+    let s='';
+    for(let t=-1;t<=11;t++)s+='<line x1="'+X(t)+'" y1="10" x2="'+X(t)+'" y2="186" style="stroke:var(--grid)"/>'+(t%5===0?'<text x="'+X(t)+'" y="202" text-anchor="middle" class="m dim" style="font-size:10.5px">'+t+' ns</text>':'');
+    [0,T,2*T].forEach(e=>{s+='<rect x="'+X(e-tsu)+'" y="10" width="'+(X(e+th)-X(e-tsu))+'" height="176" style="fill:var(--accent-soft)"/>';});
+    const row=(y,name,pts,col)=>{const hi=y,lo=y+26,Y=v=>lo-v*(lo-hi);let p='M'+X(pts[0][0])+','+Y(pts[0][1]);
+      for(let i=1;i<pts.length;i++){p+=' L'+X(pts[i][0])+','+Y(pts[i-1][1])+' L'+X(pts[i][0])+','+Y(pts[i][1]);}
+      p+=' L'+X(t1)+','+Y(pts[pts.length-1][1]);
+      return '<text x="6" y="'+(y+18)+'" class="m" style="font-size:12px">'+name+'</text><path d="'+p+'" class="wire" style="stroke:'+col+';stroke-width:2"/>';};
+    let ck=[[t0,0]];for(let k=0;k<3;k++){ck.push([k*T,1]);ck.push([k*T+T/2,0]);}
+    s+=row(14,'clk',ck,'var(--ink2)');
+    s+=row(56,'D',[[t0,0],[d,1]],'var(--trace)');
+    s+=row(98,'q1',q1,'var(--trace)');
+    s+=row(140,'q2',q2,'var(--trace)');
+    if(meta1){const a=X(meta1[0]),b=X(Math.min(meta1[1],t1));let wv='M'+a+',111';for(let x=a;x<b;x+=6)wv+=' l3,-3 l3,3';
+      s+='<path d="'+wv+'" style="fill:none;stroke:var(--bad);stroke-width:2"/>';}
+    if(meta2){const a=X(T+tcq);let wv='M'+a+',153';for(let x=a;x<X(t1);x+=6)wv+=' l3,-3 l3,3';s+='<path d="'+wv+'" style="fill:none;stroke:var(--bad);stroke-width:2"/>';}
+    $('#m1svg').innerHTML=s;
+    const m=$('#m1msg');
+    if(!meta1){m.className='msg ok';m.innerHTML=d<-tsu?'D가 setup 구간 전에 바뀌었으므로 q1은 첫 엣지에서 깨끗하게 1을 잡습니다.':'D가 hold 구간 뒤에 바뀌었으므로 첫 엣지는 옛 값 0을, 다음 엣지(5 ns)가 1을 깨끗하게 잡습니다.';}
+    else if(!meta2){m.className='msg warn';m.innerHTML='D가 setup/hold 구간 안에서 바뀌어 q1이 메타스테이블(빨간 물결)이 됐습니다. '+fx(res1-tcq,2)+' ns 뒤 '+(q1At(res1+0.01)===1?'1':'0')+'로 결정됐고, q2는 5 ns 엣지에서 이미 안정된 값을 받았습니다. 동기화기가 제 역할을 했습니다.';}
+    else{m.className='msg bad';m.innerHTML='엣지 한가운데에 너무 가까워서 q1이 한 주기 안에 결정되지 못했고, q2까지 메타스테이블이 됐습니다. MTBF가 계산하는 바로 그 “극히 드문 실패”입니다.';}
+  }
+  onInput('m1d',draw);draw();
+})();
+
+(()=>{ // 실험 5-3
+  let n=2;const tau=50e-12,T0=100e-12,LOG10E=Math.LOG10E,UNIV=13.8e9;
+  segBind('mt_n',v=>{n=+v;draw();});
+  ['mt_fc','mt_fd'].forEach(id=>onInput(id,draw));
+  function human(lg){ // lg = log10(seconds)
+    if(lg<Math.log10(60))return fx(Math.pow(10,lg),lg<0?3:1)+'초';
+    if(lg<Math.log10(3600))return fx(Math.pow(10,lg)/60,1)+'분';
+    if(lg<Math.log10(86400))return fx(Math.pow(10,lg)/3600,1)+'시간';
+    if(lg<Math.log10(3.156e7))return fx(Math.pow(10,lg)/86400,1)+'일';
+    const ly=lg-Math.log10(3.156e7);
+    if(ly<6)return fx(Math.pow(10,ly),0)+'년';
+    return '10^'+Math.floor(ly)+'년';
+  }
+  function draw(){
+    const fc=+$('#mt_fc').value*1e6,fd=+$('#mt_fd').value*1e6,Tc=1/fc;
+    $('#mt_fcv').textContent=fx(fc/1e6,0)+' MHz';$('#mt_fdv').textContent=fx(fd/1e6,0)+' MHz';
+    const tr=(n-1)*Tc+0.05*Tc;
+    const lg=(tr/tau)*LOG10E-Math.log10(T0*fc*fd);
+    const ly=lg-Math.log10(3.156e7);
+    $('#mt_stats').innerHTML='<div class="stat"><span class="k">결정 시간 t_r</span><span class="v">'+fx(tr*1e9,2)+' ns</span></div><div class="stat"><span class="k">MTBF</span><span class="v '+(ly<10?'badc':'good')+'">'+human(lg)+'</span></div>';
+    const m=$('#mt_msg');
+    if(ly<1){m.className='msg bad';m.innerHTML='제품으로 쓸 수 없는 수준입니다. 이 정도면 시연 중에도 오동작을 볼 수 있습니다.';}
+    else if(ly<Math.log10(UNIV)){m.className='msg warn';m.innerHTML='제품 하나로는 버틸 만해 보여도, 같은 칩이 백만 개 팔리면 어딘가에서 매일 고장이 납니다.';}
+    else{m.className='msg ok';m.innerHTML='우주의 나이(약 138억 년)보다 '+(ly-Math.log10(UNIV)>1?'10^'+Math.floor(ly-Math.log10(UNIV))+'배 ':'')+'깁니다. 한 단을 더하면 지수에 주기 하나가 더해지기 때문입니다.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 5-4
+  const TA=3,TB=3.7,PH=1.6,TM=46,DJ=[0,1,0.35,0.7];
+  let mode='bin';
+  segBind('g_mode',v=>{mode=v;draw();});onInput('g_sk',draw);
+  const cnt=t=>t<0?4:(Math.floor(t/TA)+5)&15;
+  const enc=v=>mode==='gray'?(v^(v>>1)):v,dec=g=>mode==='gray'?(g^(g>>1)^(g>>2)^(g>>3)):g;
+  const bin4=v=>v.toString(2).padStart(4,'0');
+  function draw(){
+    const sk=+$('#g_sk').value;$('#g_skv').textContent=fx(sk,2)+' ns';
+    const X=t=>100+t*(452/TM),bit=(j,t)=>(enc(cnt(t-DJ[j]*sk))>>j)&1;
+    let s='',wrong=0,reads=0;
+    for(let k=0;k*TA<TM;k++){const a=X(k*TA),b=X(Math.min(TM,(k+1)*TA)),v=cnt(k*TA+0.01);
+      s+='<path d="M'+a+',22 L'+(a+3)+',12 L'+(b-3)+',12 L'+b+',22 L'+(b-3)+',32 L'+(a+3)+',32 Z" style="fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.2"/><text x="'+((a+b)/2)+'" y="26" text-anchor="middle" class="m" style="font-size:11px">'+v+'</text>';}
+    s+='<text x="6" y="26" class="m" style="font-size:11px">A 카운터</text>';
+    const E=[];for(let e=PH;e<TM;e+=TB)E.push(e);
+    E.forEach(e=>{s+='<line x1="'+X(e)+'" y1="40" x2="'+X(e)+'" y2="182" style="stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3"/>';});
+    for(let j=3;j>=0;j--){const y=44+(3-j)*24;let d='',p=null;
+      for(let px=0;px<=452;px++){const t=px*TM/452,v=bit(j,t),yy=v?y:y+16;if(p===null)d+='M'+(100+px)+','+yy;else if(yy!==p)d+=' L'+(100+px)+','+p+' L'+(100+px)+','+yy;p=yy;}
+      d+=' L'+X(TM)+','+p;
+      s+='<text x="6" y="'+(y+13)+'" class="m" style="font-size:11px">b'+j+' (B쪽)</text><path d="'+d+'" style="fill:none;stroke:var(--trace);stroke-width:1.6"/>';}
+    s+='<text x="6" y="157" class="m" style="font-size:11px">clk B</text>';
+    let cd='M100,160';E.forEach(e=>{cd+=' L'+X(e)+',160 L'+X(e)+',146 L'+X(Math.min(TM,e+TB/2))+',146 L'+X(Math.min(TM,e+TB/2))+',160';});cd+=' L'+X(TM)+',160';
+    s+='<path d="'+cd+'" style="fill:none;stroke:var(--ink2);stroke-width:1.4"/>';
+    s+='<text x="6" y="198" class="m" style="font-size:11px">B가 읽은 값</text>';
+    E.forEach((e,i)=>{let code=0;for(let j=0;j<4;j++)code|=bit(j,e)<<j;const v=dec(code),ok=v===cnt(e)||v===cnt(e-sk-0.01);reads++;if(!ok)wrong++;
+      const a=X(e),b=X(Math.min(TM,i+1<E.length?E[i+1]:TM));
+      s+='<rect x="'+(a+1)+'" y="184" width="'+(b-a-2)+'" height="20" rx="2" style="fill:'+(ok?'var(--trace-soft)':'var(--bad-soft)')+';stroke:'+(ok?'var(--trace)':'var(--bad)')+'"/><text x="'+((a+b)/2)+'" y="198" text-anchor="middle" class="m" style="font-size:11px;'+(ok?'':'fill:var(--bad);font-weight:600')+'">'+v+'</text>';
+      s+='<text x="'+((a+b)/2)+'" y="224" text-anchor="middle" style="font-size:12px;fill:'+(ok?'var(--ok)':'var(--bad)')+'">'+(ok?'✓':'✗')+'</text>';});
+    $('#gsvg').innerHTML=s;
+    $('#gstats').innerHTML='<div class="stat"><span class="k">읽은 횟수</span><span class="v">'+reads+'</span></div><div class="stat"><span class="k">존재하지 않는 값</span><span class="v '+(wrong?'badc':'good')+'">'+wrong+'</span></div>';
+    const m=$('#gmsg');
+    if(mode==='bin'&&wrong){m.className='msg bad';m.innerHTML='7→8 (0111→1000)이나 11→12 (1011→1100)처럼 여러 비트가 한꺼번에 바뀌는 순간에 걸리면, 비트마다 옛 값과 새 값을 섞어 읽어서 앞뒤 어느 쪽도 아닌 값이 나옵니다.';}
+    else if(mode==='bin'){m.className='msg warn';m.innerHTML='지금은 운 좋게 틀린 값이 없습니다. 실제 칩에서는 네 배선의 지연을 똑같이 맞출 수 없으므로 도착 시각 차이를 0으로 둘 수 없습니다. 슬라이더를 움직여 보세요.';}
+    else{m.className='msg ok';m.innerHTML='그레이 코드는 한 번에 한 비트만 바뀌므로, 도착 시각이 아무리 어긋나도 B는 옛 값 아니면 새 값만 읽습니다.';}
+  }
+  draw();
+})();
+
+
+(()=>{ // 실험 5-5
+  let w=0,r=0,data=[null,null,null,null],nid=0;
+  const b3=v=>v.toString(2).padStart(3,'0'),g3=v=>{const g=v^(v>>1);return g.toString(2).padStart(3,'0');};
+  function st(){const empty=w===r,full=(w&3)===(r&3)&&(w>>2)!==(r>>2);return {empty,full};}
+  function draw(msg){
+    const {empty,full}=st();let s='';
+    for(let i=0;i<4;i++){const x=150+i*70,v=data[i];s+='<rect x="'+x+'" y="40" width="60" height="44" rx="3" class="box" style="'+(v!==null?'fill:var(--trace-soft)':'')+'"/><text x="'+(x+30)+'" y="67" text-anchor="middle" class="m">'+(v!==null?'D'+v:'·')+'</text><text x="'+(x+30)+'" y="100" text-anchor="middle" class="m dim" style="font-size:10.5px">칸 '+i+'</text>';}
+    const wx=150+(w&3)*70+30,rx=150+(r&3)*70+30;
+    s+='<path d="M'+wx+' 14 V36" class="wire" style="stroke:var(--accent)"/><text x="'+wx+'" y="11" text-anchor="middle" class="m" style="font-size:11px;fill:var(--accent)">쓰기</text>';
+    s+='<path d="M'+rx+' 128 V90" class="wire" style="stroke:var(--warn)"/><text x="'+rx+'" y="140" text-anchor="middle" class="m" style="font-size:11px;fill:var(--warn)">읽기</text>';
+    s+='<text x="10" y="162" class="m" style="font-size:12px">쓰기 포인터  '+b3(w)+'  (그레이 '+g3(w)+')</text><text x="10" y="182" class="m" style="font-size:12px">읽기 포인터  '+b3(r)+'  (그레이 '+g3(r)+')</text>';
+    s+='<text x="10" y="56" class="m" style="font-size:12px;fill:'+(empty?'var(--ok)':'var(--ink2)')+';font-weight:'+(empty?600:400)+'">empty='+(empty?1:0)+'</text><text x="10" y="76" class="m" style="font-size:12px;fill:'+(full?'var(--bad)':'var(--ink2)')+';font-weight:'+(full?600:400)+'">full='+(full?1:0)+'</text>';
+    $('#ffsvg').innerHTML=s;
+    $('#ff_w').disabled=full;$('#ff_r').disabled=empty;
+    $('#ffmsg').innerHTML=msg||(empty?'두 포인터가 완전히 같습니다: 비었음.':full?'칸 번호(아래 두 비트)는 같고 맨 위 비트만 다릅니다: 쓰는 쪽이 한 바퀴 앞섰으니 꽉 찼음.':'데이터 '+((w-r)&7)+'개가 들어 있습니다.');
+  }
+  $('#ff_w').onclick=()=>{data[w&3]=nid++;w=(w+1)&7;draw();};
+  $('#ff_r').onclick=()=>{data[r&3]=null;r=(r+1)&7;draw();};
+  $('#ff_x').onclick=()=>{w=0;r=0;data=[null,null,null,null];nid=0;draw();};
+  draw();
+})();
+
+(()=>{ // 실험 5-6
+  const TA=2,TB=5,PH=1.3;onInput('pl_g',draw);
+  function draw(){
+    const g=+$('#pl_g').value;$('#pl_gv').textContent=g+'사이클';
+    const P=[];for(let i=0;i<8;i++)P.push(2+i*g);const TM=(P[7]+2)*TA+4*TB;
+    const pulse=t=>{const k=Math.floor(t/TA);return P.includes(k)?1:0;};
+    const tgl=t=>{let n=0;for(const k of P)if((k+1)*TA<=t)n++;return n%2;};
+    const E=[];for(let e=PH;e<TM;e+=TB)E.push(e);
+    const d1=[],d2=[],t1=[],t2=[],t3=[],out=[];let pd1=0,pd2=0,s1=0,s2=0,s3=0;
+    E.forEach(e=>{pd2=pd1;pd1=pulse(e);s3=s2;s2=s1;s1=tgl(e);d2.push(pd2);out.push(s2^s3);});
+    let rd=0;for(let i=0;i<d2.length;i++)if(d2[i]&&!(i>0&&d2[i-1]))rd++;
+    const rt=out.reduce((a,b)=>a+b,0);
+    const X=t=>92+t*(460/TM);let s='';
+    const row=(y,name,f,col)=>{let d='',p=null;for(let px=0;px<=460;px++){const t=px*TM/460,v=f(t),yy=v?y:y+14;if(p===null)d+='M'+(92+px)+','+yy;else if(yy!==p)d+=' L'+(92+px)+','+p+' L'+(92+px)+','+yy;p=yy;}d+=' L'+X(TM)+','+p;
+      return '<text x="6" y="'+(y+12)+'" class="m" style="font-size:11px">'+name+'</text><path d="'+d+'" style="fill:none;stroke:'+col+';stroke-width:1.6"/>';};
+    s+=row(8,'clk A',t=>((t%TA)<TA/2)?1:0,'var(--ink2)')+row(34,'pulse_a',pulse,'var(--trace)')+row(60,'tgl',tgl,'var(--p3)');
+    s+=row(90,'clk B',t=>(t>=PH&&((t-PH)%TB)<TB/2)?1:0,'var(--ink2)');
+    E.forEach(e=>{s+='<line x1="'+X(e)+'" y1="88" x2="'+X(e)+'" y2="200" style="stroke:var(--accent);stroke-dasharray:3 3"/>';});
+    const step=(y,name,arr,col)=>{let d='M92,'+(y+14);E.forEach((e,i)=>{const yy=arr[i]?y:y+14,nx=X(i+1<E.length?E[i+1]:TM);d+=' L'+X(e)+','+(i?(arr[i-1]?y:y+14):y+14)+' L'+X(e)+','+yy+' L'+nx+','+yy;});
+      return '<text x="6" y="'+(y+12)+'" class="m" style="font-size:11px">'+name+'</text><path d="'+d+'" style="fill:none;stroke:'+col+';stroke-width:1.8"/>';};
+    s+=step(124,'직접 2단',d2,'var(--bad)')+step(160,'토글 방식',out,'var(--ok)');
+    $('#plsvg').innerHTML=s;
+    $('#plstats').innerHTML=[['보낸 펄스','8개'],['직접 2단으로 받은 펄스',rd+'개',rd<8],['토글 방식으로 받은 펄스',rt+'개',rt<8]].map(([k,v,b])=>'<div class="stat"><span class="k">'+k+'</span><span class="v '+(b?'badc':'good')+'">'+v+'</span></div>').join('');
+    const m=$('#plmsg');
+    if(rt<8){m.className='msg warn';m.innerHTML='펄스 간격이 너무 짧아 토글이 B 쪽에서 바뀌기 전에 다시 뒤집혔습니다. 토글 방식도 펄스 사이에 B 클럭 몇 사이클의 여유가 있어야 합니다. 더 촘촘한 이벤트는 카운터 값을 그레이 코드로 넘기거나 FIFO를 씁니다.';}
+    else if(rd<8){m.className='msg';m.innerHTML='2단 동기화기를 그대로 달면 A의 2 ns짜리 펄스가 B의 엣지 사이에 끝나 버려 '+(8-rd)+'개를 놓쳤습니다. 토글 방식은 8개를 모두 받았습니다.';}
+    else{m.className='msg ok';m.innerHTML='지금 간격에서는 두 방식 모두 다 받았습니다. 간격을 줄여 보세요.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 5-7
+  const R=8,C=7,N=R*C;onInput('cg_a',draw);onInput('cg_w',draw);
+  function draw(){
+    const a=+$('#cg_a').value,w=+$('#cg_w').value;$('#cg_av').textContent=fx(a/R,2)+' 사이클';$('#cg_wv').textContent=fx(w/R,2)+' 사이클';
+    const clk=[],en=[],g=[],qg=[],qe=[];let x=0,y=0,glitch=0,prevg=1;
+    for(let t=0;t<N;t++){const c=(t%R)<R/2?1:0,e=(t>=a&&t<a+w)?0:1,gc=c&e;clk.push(c);en.push(e);g.push(gc);
+      if(gc&&!prevg){x++;if(t%R!==0)glitch++;}prevg=gc;
+      if(t>0&&t%R===0&&en[t-1])y++;qg.push(x);qe.push(y);}
+    $('#cgwave').innerHTML=wave([{n:'clk',t:'b',v:clk,col:'var(--ink2)'},{n:'en',t:'b',v:en,col:'var(--p3)'},{n:'gclk = clk&en',t:'b',v:g,col:'var(--bad)'},{n:'q (gclk)',t:'v',v:qg},{n:'q (enable)',t:'v',v:qe}],{cycles:C,res:R,cw:64,lw:104});
+    const m=$('#cgmsg');
+    if(glitch){m.className='msg bad';m.innerHTML='en이 클럭이 1인 동안 다시 올라가서 gclk에 클럭 엣지가 아닌 곳에 상승 엣지(글리치)가 '+glitch+'번 생겼습니다. q (gclk)가 엉뚱한 순간에 늘어납니다. enable 방식은 엣지에서만 en을 보므로 깨끗합니다.';}
+    else{m.className='msg';m.innerHTML='지금은 en이 클럭이 0인 동안에만 바뀌어 글리치가 없습니다. en이 바뀌는 시각을 옮겨 보세요. 실제 회로에서는 en의 타이밍을 이렇게 맞춰 줄 수 없습니다.';}
+  }
+  draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'리셋 펄스가 두 클럭 엣지 사이에서 잠깐 켜졌다 꺼졌습니다. 동기 리셋 회로는?',o:['즉시 리셋된다','다음 엣지에서 리셋된다','리셋을 보지 못한다'],a:2,e:'맞습니다. 동기 리셋은 엣지 순간에만 rst를 보기 때문에 그 사이에 끝난 펄스는 놓칩니다.'},
+  {q:'2단 동기화기에 대한 설명으로 옳은 것은?',o:['메타스테이빌리티를 완전히 없앤다','메타스테이빌리티가 다음 회로로 번질 확률을 극적으로 줄인다','클럭 주파수를 두 배로 올려 준다'],a:1,e:'맞습니다. 실패 확률은 0이 아니지만, 결정 시간이 한 주기 늘어 MTBF가 지수적으로 커집니다.'},
+  {q:'그레이 코드로 바꾼 4비트 카운터를 다른 클럭 쪽에서 비트마다 동기화해 읽습니다. 읽은 값은?',o:['아무 값이나 나올 수 있다','바뀌기 전 값이나 바뀐 뒤 값 중 하나','항상 정확히 지금 값'],a:1,e:'맞습니다. 한 번에 한 비트만 바뀌므로 그 비트를 옛 값으로 읽든 새 값으로 읽든 앞뒤 두 값 중 하나가 됩니다. 비동기 FIFO의 포인터를 그레이 코드로 넘기는 이유입니다.'},
+  {q:'다른 클럭 도메인의 8비트 카운터 값을 넘기려고 합니다. 가장 나쁜 방법은?',o:['비트마다 2단 동기화기를 단다','그레이 코드로 바꿔서 넘긴다','비동기 FIFO를 쓴다'],a:0,e:'맞습니다. 여러 비트가 동시에 바뀔 때 비트마다 다른 사이클에 넘어가 존재하지 않는 값을 보게 됩니다.'},
+  {q:'4칸 FIFO의 3비트 쓰기 포인터가 110, 읽기 포인터가 010입니다. FIFO 상태는?',o:['비었다','꽉 찼다','2개 들어 있다'],a:1,e:'맞습니다. 아래 두 비트(칸 번호)가 같고 맨 위 비트만 다르니, 쓰는 쪽이 정확히 한 바퀴 앞서 있습니다.'},
+  {q:'빠른 클럭의 1사이클 펄스를 느린 클럭 쪽으로 넘기는 올바른 방법은?',o:['2단 동기화기를 그대로 단다','펄스마다 신호를 뒤집고, 느린 쪽에서 그 신호가 바뀌었는지 본다','펄스를 더 짧게 만든다'],a:1,e:'맞습니다. 펄스를 레벨 변화로 바꾸면 느린 쪽이 놓치지 않습니다(토글 동기화기).'},
+  {q:'일부 레지스터만 가끔 동작시키고 싶을 때 권장하는 방법은?',o:['클럭을 AND 게이트로 막는다','클럭은 그대로 두고 enable 조건으로 대입을 막는다','카운터로 느린 클럭을 만든다'],a:1,e:'맞습니다. 클럭은 전용망을 타는 하나로 유지하고, 동작 여부는 enable로 정합니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch04-pipeline.html"><span>이전</span>4장. 파이프라이닝</a><a class="nx" href="ch06-hls.html"><span>다음</span>6장. HLS: C가 회로가 되는 과정</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li class="on">5장. 동기와 비동기</li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>11장. 시스톨릭 배열 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">11장</span><span class="dots" aria-label="12장 중 11장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L181.8,40 L185.8,58 L243.0,58 L247.0,40 L365.5,40 L369.5,58 L426.8,58 L430.8,40 L549.2,40 L553.2,58 L610.5,58 L614.5,40 L733.0,40 L737.0,58 L794.2,58 L798.2,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><div class="num">11장</div><h1>시스톨릭 배열</h1><p class="lede">FIR의 곱셈기 사슬을 격자로 펼쳐 행렬 곱을 하는 배열을 만들고, 타일링과 배치가 속도를 어떻게 정하는지 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">11.1</span>10장의 FIR에서 출발하기</h2>
+<p>10장의 전치형 FIR을 다시 보세요. 곱셈기 네 개가 나란히 있고, 곱한 값은 레지스터를 지나며 옆으로 더해졌습니다. 이렇게 <b>같은 모양의 작은 처리 단위(PE)를 줄지어 놓고, 데이터를 매 사이클 이웃에게만 넘기는 구조</b>를 시스톨릭(systolic) 배열이라고 합니다. 심장이 박동할 때마다 피가 한 칸씩 밀려가는 모습에서 따온 이름입니다.</p>
+<p>10장 FIR에는 한 가지 약점이 있었습니다. x가 긴 선 하나로 네 곱셈기에 동시에 뿌려졌습니다(브로드캐스트). PE가 4개일 때는 괜찮지만 수백 개로 늘어나면 이 선이 길어져서 2장의 크리티컬 패스가 됩니다. 그래서 진짜 시스톨릭 배열은 입력도 레지스터를 거쳐 한 칸씩 넘깁니다. 모든 선이 이웃 PE까지만 가므로, 배열을 아무리 키워도 클럭이 느려지지 않습니다.</p>
+
+<h2><span class="sec">11.2</span>PE 하나</h2>
+<p>구글 TPU가 쓰는 <b>가중치 고정</b>(weight-stationary) 방식의 PE는 가중치 w 하나를 미리 실어 두고, 매 사이클 다음 일을 합니다.</p>
+<ul>
+<li>왼쪽에서 입력 a를 받아 그대로 오른쪽 PE로 넘깁니다.</li>
+<li>위에서 부분합 p를 받아 p + a·w를 아래 PE로 넘깁니다.</li>
+</ul>
+<pre class="code">
+module pe (input clk, input load_w,
+           input  signed [7:0]  a_in, w_in,
+           input  signed [31:0] p_in,
+           output reg signed [7:0]  a_out,
+           output reg signed [31:0] p_out);
+  reg signed [7:0] w;
+  always @(posedge clk) begin
+    if (load_w) w &lt;= w_in;      // 가중치는 한 번 싣고 그대로
+    a_out &lt;= a_in;              // 입력은 오른쪽으로
+    p_out &lt;= p_in + a_in * w;   // 부분합은 아래로
+  end
+endmodule
+</pre>
+<p>1장의 시프트 레지스터와 4장의 파이프라인 레지스터, 곱셈기 하나와 덧셈기 하나가 전부입니다. 이 PE를 K×N 격자로 깔면, 위에서 아래로 내려가는 한 열이 내적 하나를 계산합니다. 열 n의 맨 아래로 나오는 값은 Σ<sub>k</sub> x[k]·W[k][n], 즉 벡터와 행렬의 곱의 n번째 원소입니다.</p>
+
+<h2><span class="sec">11.3</span>왜 입력을 비스듬히 넣어야 하나</h2>
+<p>행 k의 PE에 도착한 부분합은 위쪽 PE들을 거치느라 k 사이클 늦게 도착합니다. 그러니 행 k에 들어가는 입력도 k 사이클 늦게 넣어야 같은 벡터끼리 만납니다. 그래서 입력 행렬을 계단 모양으로 비스듬히(skew) 밀어 넣고, 계산은 대각선 물결처럼 배열을 훑고 지나갑니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 11-1</b><span>4×4 시스톨릭 배열로 행렬 곱하기</span></figcaption>
+<div class="body">
+<p class="hint">입력 벡터 4개(x0~x3, 색으로 구분)에 4×4 가중치 행렬 W를 곱합니다. 각 PE 위쪽 숫자는 실려 있는 가중치, 가운데는 지나가는 입력, 아래는 부분합입니다. 왼쪽 계단은 앞으로 들어갈 입력입니다.</p>
+<div class="ctrl"><span class="lbl">입력 넣는 방식</span><div class="seg" id="s_skew"><button data-v="1" aria-pressed="true">비스듬히 (skew)</button><button data-v="0" aria-pressed="false">한꺼번에</button></div></div>
+<div class="scroll"><svg id="ssvg" class="sch" viewBox="0 0 560 400" role="img" aria-label="시스톨릭 배열"></svg></div>
+<div class="ctrl"><button id="sclk" class="pri">클럭 ↑</button><button id="sauto">자동 실행</button><button id="srst">리셋</button><span class="lbl" id="scyc"></span></div>
+<p class="msg" id="smsg"></p>
+<div class="g2">
+<div><div class="sub">결과 Y = X · W (배열에서 나온 값)</div><table class="t" id="sy" style="font-family:var(--mono);text-align:center"></table></div>
+<div><div class="sub">정답</div><table class="t" id="sans" style="font-family:var(--mono);text-align:center"></table></div>
+</div>
+</div>
+</figure>
+
+<div class="prose">
+<p>“한꺼번에”로 바꿔서 돌려 보세요. 계산은 똑같이 일어나지만, 아래쪽 행에서 서로 다른 벡터의 부분합과 입력이 만나 엉뚱한 값이 나옵니다. 4장에서 <code>c1 &lt;= c</code>로 박자를 맞추지 않았을 때와 똑같은 버그입니다.</p>
+<p>벡터 하나가 들어가서 마지막 결과가 나오기까지 K + N − 1 사이클이 걸리지만, 배열이 꽉 차면 매 사이클 새 벡터가 들어가고 매 사이클 결과가 나옵니다. 4×4 배열은 사이클마다 곱셈 16개를 합니다.</p>
+
+<h2><span class="sec">11.4</span>배열보다 큰 행렬: 타일링</h2>
+<p>실제 행렬은 배열보다 훨씬 큽니다. 64×16 가중치를 8×8 배열에서 곱하려면 가중치를 8×8 조각(타일) 8×2 = 16개로 나누고, 타일을 하나씩 실어 가며 돌린 뒤 같은 출력에 해당하는 부분합을 누산기에 더합니다. 이때 시간이 어디로 새는지 보겠습니다.</p>
+<ul>
+<li><b>가중치 싣기</b>: 타일마다 S 사이클(한 행씩 밀어 넣음).</li>
+<li><b>채우기와 비우기</b>: 첫 입력이 배열을 가로지르고 마지막 결과가 빠져나오는 데 약 2S 사이클. 이 동안 배열의 일부만 일합니다.</li>
+<li><b>흘리기</b>: 입력 벡터 M개(배치)가 지나가는 M 사이클. 배열이 꽉 차서 일하는 구간입니다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 11-2</b><span>배열 크기, 배치, 활용률</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>타일마다 가중치 싣기 S사이클, 흘리기 M + K<sub>t</sub> + N<sub>t</sub> − 2사이클. 미리 싣기는 가중치 레지스터가 두 벌이라고 봅니다.</p>
+<div class="ctrl"><span class="lbl">배열 크기 S×S</span><div class="seg" id="u_s"><button data-v="4" aria-pressed="false">4×4</button><button data-v="8" aria-pressed="true">8×8</button><button data-v="16" aria-pressed="false">16×16</button><button data-v="32" aria-pressed="false">32×32</button></div></div>
+<label class="sl"><span>배치 M</span><input type="range" id="u_m" min="0" max="8" value="0"><output id="u_mv"></output></label>
+<label class="sl"><span>K (입력 길이)</span><input type="range" id="u_k" min="8" max="256" step="8" value="64"><output id="u_kv"></output></label>
+<label class="sl"><span>N (출력 개수)</span><input type="range" id="u_n" min="8" max="256" step="8" value="16"><output id="u_nv"></output></label>
+<div class="ctrl"><span class="lbl">스케줄</span><div class="seg" id="u_db"><button data-v="0" aria-pressed="true">타일마다 기다림</button><button data-v="1" aria-pressed="false">다음 가중치 미리 싣기</button></div></div>
+<div class="stats" id="ustats"></div>
+<div class="sub">앞쪽 타일 몇 개의 시간 배분</div>
+<div class="scroll" id="utl"></div>
+<div class="sub">배치 크기에 따른 활용률 (현재 설정)</div>
+<div class="scroll"><svg id="ucurve" class="sch" viewBox="0 0 560 200" role="img" aria-label="배치와 활용률"></svg></div>
+<p class="msg" id="umsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<div class="note"><b>배치가 중요한 이유</b>
+배치가 작으면 배열은 가중치를 싣고 채우고 비우는 데 대부분의 시간을 씁니다. TPU 같은 가속기가 여러 입력을 모아서(배치) 한꺼번에 처리하려는 이유이고, “다음 가중치 미리 싣기”처럼 가중치 레지스터를 두 벌 두는 이유이기도 합니다. 7장에서 메모리 포트가 II를 막았던 것처럼, 여기서는 가중치를 가져오는 속도가 배열을 굶길 수 있습니다.</div>
+
+<h2><span class="sec">11.5</span>진짜 이유: 데이터 재사용</h2>
+<p>11.1에서는 선이 짧아진다는 점을 강조했지만, 시스톨릭 배열이 빠른 더 근본적인 이유는 <b>한 번 읽은 값을 여러 PE가 돌려 쓴다</b>는 데 있습니다. MAC 하나로 행렬 곱을 하면 곱셈 한 번마다 메모리에서 값 두 개를 읽어야 합니다. 메모리는 사이클당 몇 개밖에 못 내주므로(8장), MAC을 아무리 늘려도 메모리가 따라오지 못합니다.</p>
+<p>S×S 배열은 사이클마다 입력 S개를 왼쪽에서 받고 결과 S개를 아래로 내보내면서 곱셈을 S²번 합니다. 가중치는 타일마다 한 번 싣고 배치 M개 동안 계속 씁니다. 그래서 곱셈 한 번에 필요한 메모리 접근이 배열이 커질수록, 배치가 클수록 줄어듭니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 11-3</b><span>곱셈 한 번에 메모리를 몇 번 건드리나</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">배열 크기</span><div class="seg" id="ru_s"><button data-v="1" aria-pressed="false">MAC 1개</button><button data-v="4" aria-pressed="false">4×4</button><button data-v="8" aria-pressed="true">8×8</button><button data-v="16" aria-pressed="false">16×16</button><button data-v="64" aria-pressed="false">64×64</button></div></div>
+<label class="sl"><span>배치 M</span><input type="range" id="ru_m" min="0" max="8" value="3"><output id="ru_mv"></output></label>
+<div class="scroll"><svg id="rusvg" class="sch" viewBox="0 0 560 130" role="img" aria-label="곱셈당 메모리 접근"></svg></div>
+<div class="stats" id="rustats"></div>
+<p class="msg" id="rumsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">11.6</span>무엇을 PE에 머물게 하나</h2>
+<p>이 장의 배열은 가중치를 PE에 고정했습니다. 무엇을 고정하느냐에 따라 데이터 흐름이 세 가지로 나뉘고, 가속기마다 다르게 고릅니다.</p>
+<table class="t">
+<tr><th>방식</th><th>PE에 머무는 것</th><th>흐르는 것</th><th>유리한 경우</th></tr>
+<tr><td>가중치 고정 (WS)</td><td>가중치</td><td>입력은 옆으로, 부분합은 아래로</td><td>같은 가중치로 많은 입력을 처리할 때 (배치 추론). TPU가 이 방식</td></tr>
+<tr><td>출력 고정 (OS)</td><td>부분합(누산기)</td><td>입력과 가중치가 각각 옆과 아래로</td><td>K가 길어 누산을 오래 할 때. 부분합을 밖으로 옮기지 않아도 됨</td></tr>
+<tr><td>입력 고정 (IS)</td><td>입력</td><td>가중치와 부분합이 흐름</td><td>입력 하나를 많은 출력에서 다시 쓸 때</td></tr>
+</table>
+<p>어느 방식이든 원리는 같습니다. 가장 자주 다시 쓰이는 값을 PE에 붙잡아 두고, 나머지를 흘려 보내서 메모리 접근을 줄입니다.</p>
+
+<h2><span class="sec">11.7</span>행렬 곱이 아닌 시스톨릭: 삽입 정렬</h2>
+<p>시스톨릭 배열은 행렬 곱 전용이 아닙니다. 같은 모양의 셀을 한 줄로 늘어놓고 스트림으로 이으면 정렬도 됩니다. 각 셀은 값 하나를 들고 있다가, 들어온 값이 더 작으면 그것을 들고 원래 값을 오른쪽으로 넘기고, 아니면 들어온 값을 그대로 넘깁니다. 모든 값이 지나가고 나면 셀들이 왼쪽부터 작은 순서로 값을 들고 있습니다.</p>
+<pre class="code">
+void cell(hls::stream&lt;int&gt; &amp;in, hls::stream&lt;int&gt; &amp;out) {
+  int keep = INT_MAX;                     // 아직 빈 칸
+  for (int i = 0; i &lt; N; i++) {
+#pragma HLS PIPELINE II=1
+    int v = in.read();
+    if (v &lt; keep) { out.write(keep); keep = v; }
+    else          out.write(v);
+  }
+}
+// 맨 위 함수에서 #pragma HLS DATAFLOW 아래에 cell을 N개 줄줄이 부른다
+</pre>
+<p>9장의 DATAFLOW와 스트림으로 셀들을 잇는 코드입니다. 셀 N개가 동시에 일하므로 N개 정렬이 약 2N사이클에 끝납니다. CPU의 삽입 정렬은 N²에 비례합니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 11-4</b><span>셀 6개로 정렬하기</span></figcaption>
+<div class="body">
+<div class="ctrl"><button id="so_s" class="pri">클럭 ↑</button><button id="so_a">자동 실행</button><button id="so_r">처음으로</button><span class="lbl">입력</span><div class="seg" id="so_p"><button data-v="rnd" aria-pressed="true">섞인 값</button><button data-v="desc" aria-pressed="false">큰 것부터</button><button data-v="asc" aria-pressed="false">작은 것부터</button></div></div>
+<div class="scroll"><svg id="sosvg" class="sch" viewBox="0 0 560 140" role="img" aria-label="시스톨릭 정렬"></svg></div>
+<p class="msg" id="somsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">11.8</span>블록 행렬 곱을 HLS 코드로</h2>
+<p>11.4에서 타일링의 시간표를 봤습니다. 책 7.3절은 같은 생각을 HLS 코드로 씁니다. 행렬 C를 B×B 블록으로 나누고, 블록 하나를 만들 때 A의 B행 묶음과 B행렬의 B열 묶음을 스트림으로 한 줄씩 흘려 받습니다. 한 줄을 받을 때마다 B×B개의 곱을 동시에 더하므로, 이 모양을 바깥 곱(outer product) 방식이라고 합니다. 누산기가 PE에 머무는 11.6의 출력 고정 방식입니다.</p>
+<pre class="code">
+void mm_block(hls::stream&lt;vec_t&gt; &amp;a_cols, hls::stream&lt;vec_t&gt; &amp;b_rows, int c[B][B]) {
+#pragma HLS ARRAY_PARTITION variable=c complete
+  for (int k = 0; k &lt; K; k++) {              // K 방향으로 한 줄씩
+#pragma HLS PIPELINE II=1
+    vec_t a = a_cols.read();                 // A 블록의 k번째 열 (B개)
+    vec_t b = b_rows.read();                 // B 블록의 k번째 행 (B개)
+    for (int i = 0; i &lt; B; i++)
+      for (int j = 0; j &lt; B; j++)
+        c[i][j] += a.v[i] * b.v[j];          // 펼쳐져서 곱셈 B×B개가 동시에
+  }
+}
+</pre>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 11-5</b><span>바깥 곱으로 블록 하나 채우기</span></figcaption>
+<div class="body">
+<p class="hint">4×4 블록, K=4입니다. 한 단계마다 A의 열 하나와 B의 행 하나가 들어와 16칸이 동시에 더해집니다.</p>
+<div class="ctrl"><button id="op_s" class="pri">한 줄 받기 ↑</button><button id="op_r">처음으로</button></div>
+<div class="scroll"><svg id="opsvg" class="sch" viewBox="0 0 560 200" role="img" aria-label="바깥 곱 누적"></svg></div>
+<p class="msg" id="opmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>한 사이클에 메모리(스트림)에서 2B개를 받고 곱셈을 B²번 합니다. 11.5의 데이터 재사용과 같은 계산입니다. 블록 크기 B는 칩 안 메모리와 DSP 개수로 정하고, 블록 하나가 끝나면 다음 블록의 스트림을 흘립니다. 이 블록 함수 앞뒤에 A와 B를 블록 순서로 읽어 오는 함수와 C를 내보내는 함수를 두고 DATAFLOW로 이으면 9장의 구조가 됩니다.</p>
+
+<h2><span class="sec">11.9</span>병합 정렬을 하드웨어 모양으로</h2>
+<p>CPU에서 병합 정렬은 보통 재귀로 씁니다. 재귀 호출은 합성할 수 없으므로, 하드웨어에서는 길이 1, 2, 4, …짜리 묶음을 차례로 합치는 반복문으로 바꿉니다(책 10.3).</p>
+<pre class="code">
+for (int width = 1; width &lt; N; width *= 2)          // log2 N 단계
+  for (int i = 0; i &lt; N; i += 2 * width)
+    merge(in, out, i, i + width, i + 2 * width);     // 정렬된 두 묶음을 합친다
+// 단계마다 in과 out을 바꿔 쓴다
+</pre>
+<p>단계 수가 log<sub>2</sub>N으로 정해져 있으므로 단계마다 함수 하나와 버퍼 하나를 두고 DATAFLOW로 이으면, 여러 묶음의 정렬이 단계별로 겹쳐 흘러갑니다. 11.7의 삽입 정렬 배열은 셀이 N개 필요하지만, 이 방식은 단계 log<sub>2</sub>N개면 되는 대신 각 단계가 원소 하나씩 순서대로 처리합니다. 같은 문제도 재구성 방식에 따라 자원과 처리율의 균형이 달라집니다.</p>
+
+<div class="real"><b>실제 도구에서는</b>실제 TPU는 128×128 이상의 배열과 큰 누산기 메모리, 가중치를 미리 싣는 이중 버퍼를 씁니다. HLS 도구가 평범한 C 코드에서 시스톨릭 배열을 자동으로 만들어 주지는 않으므로, PE를 함수로 쓰고 스트림과 DATAFLOW로 잇는 식으로 구조를 직접 적습니다.</div>
+<div class="recap"><b>이 장의 요점</b><ul><li>시스톨릭 배열은 이웃끼리만 데이터를 넘기는 같은 모양 PE의 격자입니다.</li><li>입력을 비스듬히 넣어야 같은 벡터끼리 만납니다.</li><li>진짜 이득은 데이터 재사용입니다. 배치가 작으면 싣기와 채우기 비용이 큽니다.</li><li>정렬처럼 행렬 곱이 아닌 문제도 시스톨릭으로 풀 수 있습니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 7.2 Complete Matrix Multiplication, 7.3 Block Matrix Multiplication, 10.2.3 Explicit Systolic Array For Insertion Sort, 10.3 Merge Sort</p></div>
+<h2><span class="sec">11.10</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{ // 실험 11-1
+  const K=4,N=4,M=4;
+  const W=[[1,0,2,1],[0,1,1,2],[2,1,0,1],[1,2,1,0]];
+  const X=[[1,2,0,1],[2,0,1,3],[0,1,2,1],[3,1,1,0]];
+  const ANS=X.map(x=>[0,1,2,3].map(n=>x.reduce((s,v,k)=>s+v*W[k][n],0)));
+  let skew=1,t,A,P,Y,timer=null;
+  const col=m=>'var(--p'+[0,1,2,3][m]+')';
+  function feed(k,tt){const m=skew?tt-k:tt;return m>=0&&m<M?{v:X[m][k],m}:null;}
+  function reset(){t=0;A=[...Array(K)].map(()=>Array(N).fill(null));P=[...Array(K)].map(()=>Array(N).fill(null));Y=[...Array(M)].map(()=>Array(N).fill(null));stop();
+    $('#smsg').className='msg';$('#smsg').innerHTML='클럭을 눌러 입력을 흘려 보내세요.';draw();}
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#sauto').textContent='자동 실행';}}
+  function step(){
+    const nA=[...Array(K)].map(()=>Array(N).fill(null)),nP=[...Array(K)].map(()=>Array(N).fill(null));
+    for(let k=0;k<K;k++)for(let n=0;n<N;n++){
+      const a=n===0?feed(k,t):A[k][n-1],p=k===0?null:P[k-1][n];
+      if(a){nA[k][n]=a;const ok=k===0||(p&&p.m===a.m&&p.ok);nP[k][n]={v:(p?p.v:0)+a.v*W[k][n],m:a.m,ok:!!ok,src:p?p.m:null};}
+      else if(p)nP[k][n]={...p};
+    }
+    A=nA;P=nP;t++;
+    let out=[];
+    for(let n=0;n<N;n++){const p=P[K-1][n];if(p&&A[K-1][n]){Y[p.m][n]={v:p.v,ok:p.ok};out.push('y'+p.m+'['+n+']='+p.v);}}
+    const live=new Set();A.forEach(r=>r.forEach(a=>{if(a)live.add('x'+a.m);}));
+    const act=A.flat().filter(Boolean).length;
+    const bad=P.flat().some(p=>p&&!p.ok);
+    $('#smsg').className='msg'+(bad?' bad':'');
+    $('#smsg').innerHTML='사이클 '+t+': PE '+act+'개가 곱셈을 했습니다'+(live.size?' (배열 안의 입력: '+[...live].join(', ')+')':'')+'.'+(out.length?' 아래로 나온 결과: '+out.join(', ')+'.':'')+(bad?' 빨간 PE에서는 서로 다른 벡터의 부분합과 입력이 만났습니다.':'');
+    if(Y.flat().every(Boolean)){stop();$('#smsg').innerHTML+=' 모든 결과가 나왔습니다. 총 '+t+'사이클.';}
+    draw();
+  }
+  function draw(){
+    let s='<defs><marker id="ah9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+    const px=n=>200+n*88,py=k=>40+k*82;
+    for(let n=0;n<N;n++)s+='<text x="'+(px(n)+35)+'" y="22" text-anchor="middle" class="m dim" style="font-size:11px">열 '+n+'</text>';
+    for(let k=0;k<K;k++){
+      s+='<text x="6" y="'+(py(k)+36)+'" class="m dim" style="font-size:11px">행'+k+'</text>';
+      for(let j=0;j<5;j++){const f=feed(k,t+j);const x=160-j*28;
+        if(f)s+='<rect x="'+(x-12)+'" y="'+(py(k)+22)+'" width="24" height="22" rx="3" style="fill:'+col(f.m)+';opacity:'+(1-j*0.13)+'"/><text x="'+x+'" y="'+(py(k)+37)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:12px">'+f.v+'</text>';
+        else s+='<rect x="'+(x-12)+'" y="'+(py(k)+22)+'" width="24" height="22" rx="3" style="fill:none;stroke:var(--grid)"/>';}
+      s+='<path d="M174 '+(py(k)+33)+' H198" class="thin" marker-end="url(#ah9)"/>';
+      for(let n=0;n<N;n++){const a=A[k][n],p=P[k][n],x=px(n),y=py(k),bad=p&&!p.ok;
+        if(n<N-1)s+='<path d="M'+(x+70)+' '+(y+33)+' H'+(px(n+1)-2)+'" class="thin" marker-end="url(#ah9)"/>';
+        s+='<path d="M'+(x+35)+' '+(y+66)+' V'+(y+80)+'" class="thin" marker-end="url(#ah9)"/>';
+        s+='<rect x="'+x+'" y="'+y+'" width="70" height="66" rx="4" class="box" style="'+(a?'stroke:'+col(a.m)+';stroke-width:3;':'')+(bad?'fill:var(--bad-soft);':'')+'"/>';
+        s+='<text x="'+(x+6)+'" y="'+(y+14)+'" class="m dim" style="font-size:10.5px">w='+W[k][n]+'</text>';
+        if(a)s+='<text x="'+(x+35)+'" y="'+(y+36)+'" text-anchor="middle" class="m" style="font-size:15px;font-weight:600;fill:'+col(a.m)+'">'+a.v+'</text>';
+        if(p)s+='<text x="'+(x+35)+'" y="'+(y+58)+'" text-anchor="middle" class="m" style="font-size:12px;fill:'+(bad?'var(--bad)':'var(--ink)')+'">p='+p.v+'</text>';
+      }
+    }
+    for(let n=0;n<N;n++){const p=P[K-1][n],a=A[K-1][n];if(p&&a)s+='<text x="'+(px(n)+35)+'" y="'+(py(K)+12)+'" text-anchor="middle" class="m" style="font-size:12.5px;font-weight:600;fill:'+(p.ok?col(p.m):'var(--bad)')+'">y'+p.m+'='+p.v+'</text>';}
+    $('#ssvg').innerHTML=s;
+    $('#scyc').textContent='사이클 '+t;
+    const tb=(rows,f)=>'<tr><th></th>'+[0,1,2,3].map(n=>'<th style="text-align:center">'+n+'</th>').join('')+'</tr>'+rows.map((r,m)=>'<tr><th style="color:'+col(m)+'">y'+m+'</th>'+r.map((c,n)=>f(c,m,n)).join('')+'</tr>').join('');
+    $('#sy').innerHTML=tb(Y,(c,m,n)=>'<td style="'+(c?(c.v===ANS[m][n]?'color:var(--ok)':'color:var(--bad);font-weight:600'):'color:var(--ink2)')+'">'+(c?c.v:'·')+'</td>');
+    $('#sans').innerHTML=tb(ANS,c=>'<td>'+c+'</td>');
+  }
+  segBind('s_skew',v=>{skew=+v;reset();});
+  $('#sclk').onclick=step;$('#srst').onclick=reset;
+  $('#sauto').onclick=()=>{if(timer){stop();return;}$('#sauto').textContent='멈춤';timer=setInterval(()=>{if(t>14){stop();return;}step();},700);};
+  reset();
+})();
+
+(()=>{ // 실험 11-2
+  const MS=[1,2,4,8,16,32,64,128,256];
+  let S=8,db=0;
+  segBind('u_s',v=>{S=+v;draw();});segBind('u_db',v=>{db=+v;draw();});
+  ['u_m','u_k','u_n'].forEach(id=>onInput(id,draw));
+  function sim(S,M,K,N,db){
+    const kt=Math.ceil(K/S),nt=Math.ceil(N/S),T=kt*nt,ev=[];let t=0,prevRun=null;
+    for(let i=0;i<T;i++){
+      const kb=i%kt,nb=Math.floor(i/kt),Kt=Math.min(S,K-kb*S),Nt=Math.min(S,N-nb*S),run=M+Kt+Nt-2;
+      let ls,rs;
+      if(!db||prevRun===null){ls=t;rs=ls+S;}else{ls=prevRun;rs=Math.max(prevRun+M,ls+S);}
+      ev.push({ls,le:ls+S,rs,fe:rs+Kt-1,se:rs+Kt-1+M,re:rs+run});
+      prevRun=rs;t=rs+run;
+    }
+    const total=Math.max(...ev.map(e=>e.re));
+    return {T,ev,total,util:M*K*N/(S*S*total)};
+  }
+  function draw(){
+    const M=MS[+$('#u_m').value],K=+$('#u_k').value,N=+$('#u_n').value;
+    $('#u_mv').textContent=M;$('#u_kv').textContent=K;$('#u_nv').textContent=N;
+    const r=sim(S,M,K,N,db),mac=M*K*N;
+    $('#ustats').innerHTML=[['타일 수',r.T],['전체',r.total+'사이클'],['MAC 1개로 하면',mac+'사이클'],['속도 향상',fx(mac/r.total,1)+'배'],['활용률',fx(100*r.util,1)+'%']]
+      .map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const shown=r.ev.slice(0,4),end=Math.max(...shown.map(e=>e.re)),cw=Math.max(1,Math.min(8,520/end)),W=Math.max(500,70+end*cw+10);
+    let g='<svg class="sch" style="min-width:500px;max-width:'+W+'px" viewBox="0 0 '+W+' '+(shown.length*30+40)+'">';
+    const seg=(y,a,b,c,l)=>b>a?'<rect x="'+(70+a*cw)+'" y="'+y+'" width="'+Math.max(1,(b-a)*cw-0.5)+'" height="20" style="fill:'+c+'"/>'+((b-a)*cw>40?'<text x="'+(70+(a+b)/2*cw)+'" y="'+(y+14)+'" text-anchor="middle" style="fill:var(--onacc);font-size:10.5px">'+l+'</text>':''):'';
+    shown.forEach((e,i)=>{const y=8+i*30;g+='<text x="62" y="'+(y+14)+'" text-anchor="end" class="m dim" style="font-size:11px">타일'+i+'</text>';
+      g+=seg(y,e.ls,e.le,'var(--p0)','싣기')+seg(y,e.rs,e.fe,'var(--p4)','채우기')+seg(y,e.fe,e.se,'var(--p2)','흘리기')+seg(y,e.se,e.re,'var(--p3)','비우기');});
+    let lx=70;const ly=shown.length*30+24;[['싣기','var(--p0)'],['채우기','var(--p4)'],['흘리기 (꽉 참)','var(--p2)'],['비우기','var(--p3)']].forEach(([t,c])=>{g+='<rect x="'+lx+'" y="'+(ly-9)+'" width="11" height="11" style="fill:'+c+'"/><text x="'+(lx+15)+'" y="'+ly+'" style="font-size:11px">'+t+'</text>';lx+=t.length*11+40;});
+    $('#utl').innerHTML=g+'</svg>';
+    // 곡선
+    const pts=MS.map(m=>[m,sim(S,m,K,N,db).util]);
+    const X=i=>60+i*(470/(MS.length-1)),Y=u=>170-u*150;
+    let c='<path d="M60,20 V170 H530" class="thin"/>';
+    [0,0.5,1].forEach(u=>{c+='<text x="54" y="'+(Y(u)+4)+'" text-anchor="end" class="m dim" style="font-size:10.5px">'+(u*100)+'%</text><line x1="60" x2="530" y1="'+Y(u)+'" y2="'+Y(u)+'" style="stroke:var(--grid)"/>';});
+    MS.forEach((m,i)=>{c+='<text x="'+X(i)+'" y="188" text-anchor="middle" class="m dim" style="font-size:10.5px">'+m+'</text>';});
+    c+='<polyline points="'+pts.map((p,i)=>X(i)+','+Y(p[1])).join(' ')+'" style="fill:none;stroke:var(--trace);stroke-width:2"/>';
+    pts.forEach((p,i)=>{const on=p[0]===M;c+='<circle cx="'+X(i)+'" cy="'+Y(p[1])+'" r="'+(on?6:3.5)+'" style="fill:'+(on?'var(--accent)':'var(--trace)')+'"/>';});
+    c+='<text x="530" y="164" text-anchor="end" class="dim" style="font-size:11px">배치 M</text>';
+    $('#ucurve').innerHTML=c;
+    const m=$('#umsg');
+    if(r.util<0.2){m.className='msg warn';m.innerHTML='배열이 대부분의 시간을 놀고 있습니다. 흘리기(초록) 구간이 싣기, 채우기, 비우기에 비해 너무 짧습니다. 배치를 늘리거나 가중치를 미리 실어 보세요.';}
+    else if(r.util<0.6){m.className='msg';m.innerHTML='배열이 일하는 시간이 꽤 늘었습니다. 남은 손실은 대부분 타일마다 반복되는 채우기와 비우기입니다.';}
+    else{m.className='msg ok';m.innerHTML='배열이 대부분의 시간 동안 꽉 차서 일합니다. 이 영역에서는 배열 크기만큼 속도가 납니다.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 11-3
+  const MS=[1,2,4,8,16,32,64,128,256];let S=8;segBind('ru_s',v=>{S=+v;draw();});onInput('ru_m',draw);
+  function draw(){
+    const M=MS[+$('#ru_m').value];$('#ru_mv').textContent=M;
+    const per=S===1?2:(2/S+1/M),macs=S*S,words=per*macs;
+    let s='';const base=2,w=x=>Math.max(2,x/base*360);
+    s+='<text x="8" y="28" class="m" style="font-size:12px">MAC 1개</text><rect x="110" y="14" width="'+w(2)+'" height="20" rx="2" style="fill:var(--lo)"/><text x="'+(116+w(2))+'" y="29" class="m" style="font-size:11.5px">2.00</text>';
+    s+='<text x="8" y="72" class="m" style="font-size:12px;fill:var(--accent);font-weight:600">'+(S===1?'MAC 1개':S+'×'+S)+'</text><rect x="110" y="58" width="'+w(per)+'" height="20" rx="2" style="fill:var(--accent)"/><text x="'+(116+w(per))+'" y="73" class="m" style="font-size:11.5px">'+fx(per,3)+'</text>';
+    s+='<text x="110" y="112" class="dim" style="font-size:11px">곱셈 한 번당 메모리에서 읽거나 쓰는 값의 수 (입력·출력 2/S + 가중치 1/M)</text>';
+    $('#rusvg').innerHTML=s;
+    $('#rustats').innerHTML=[['사이클당 곱셈',macs],['사이클당 메모리 접근',fx(words,1)+'개'],['접근 하나당 곱셈',fx(1/per,1)+'번']].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    $('#rumsg').innerHTML=S===1?'MAC 하나는 곱셈마다 값 두 개를 읽습니다. 곱셈기를 늘리면 메모리 포트도 그만큼 늘려야 합니다.':S+'×'+S+' 배열은 사이클마다 곱셈 '+macs+'번을 하면서 메모리는 '+fx(words,1)+'번만 건드립니다. 메모리 접근 한 번으로 곱셈 '+fx(1/per,1)+'번을 하는 셈입니다.'+(M<S?' 배치가 작으면 가중치를 싣는 비용(1/M)이 커서 이득이 줄어듭니다.':'');
+  }
+  draw();
+})();
+
+(()=>{ // 실험 11-4
+  const PRE={rnd:[5,2,8,1,9,3],desc:[9,8,5,3,2,1],asc:[1,2,3,5,8,9]};let IN=PRE.rnd,t,cells,flight,timer=null;
+  function reset(){t=0;cells=Array(6).fill(null);flight=Array(6).fill(null);stop();draw();}
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#so_a').textContent='자동 실행';}}
+  function step(){
+    const nf=Array(6).fill(null);
+    for(let i=0;i<6;i++){const v=i===0?(t<IN.length?IN[t]:null):flight[i];
+      if(v===null)continue;
+      if(cells[i]===null){cells[i]=v;}
+      else if(v<cells[i]){if(i<5)nf[i+1]=cells[i];cells[i]=v;}
+      else{if(i<5)nf[i+1]=v;}}
+    flight=nf;t++;draw();if(flight.every(x=>x===null)&&t>=IN.length)stop();
+  }
+  function draw(){
+    let s='<defs><marker id="ah11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+    s+='<text x="8" y="20" class="dim" style="font-size:11px">들어갈 값</text>';
+    IN.forEach((v,i)=>{const done=i<t;s+='<rect x="'+(8+i*20)+'" y="28" width="18" height="18" rx="2" style="fill:'+(done?'var(--sheet2)':'var(--p'+(v%8)+')')+'"/><text x="'+(17+i*20)+'" y="41" text-anchor="middle" class="m" style="font-size:11px;fill:'+(done?'var(--ink2)':'var(--onacc)')+'">'+v+'</text>';});
+    for(let i=0;i<6;i++){const x=150+i*66,v=cells[i],f=flight[i];
+      s+='<path d="M'+(x-24)+' 86 H'+(x-2)+'" class="thin" marker-end="url(#ah11)"/>';
+      if(f!==null)s+='<circle cx="'+(x-13)+'" cy="86" r="10" style="fill:var(--p'+(f%8)+')"/><text x="'+(x-13)+'" y="90" text-anchor="middle" class="m" style="font-size:11px;fill:var(--onacc)">'+f+'</text>';
+      s+='<rect x="'+x+'" y="66" width="40" height="40" rx="4" class="box" style="'+(v!==null?'fill:var(--trace-soft)':'')+'"/><text x="'+(x+20)+'" y="92" text-anchor="middle" class="m" style="font-size:16px;font-weight:600">'+(v===null?'·':v)+'</text><text x="'+(x+20)+'" y="122" text-anchor="middle" class="m dim" style="font-size:10px">셀 '+i+'</text>';}
+    $('#sosvg').innerHTML=s;
+    const done=flight.every(x=>x===null)&&t>=IN.length;
+    $('#somsg').innerHTML=done?'정렬이 끝났습니다. 셀들이 왼쪽부터 '+cells.join(', ')+'를 들고 있습니다. '+t+'사이클 걸렸습니다.':'사이클 '+t+': 각 셀은 들어온 값과 들고 있는 값을 비교해 작은 것을 들고 큰 것을 오른쪽으로 넘깁니다. 동그라미는 셀 사이를 건너가는 값입니다.';
+  }
+  $('#so_s').onclick=step;$('#so_r').onclick=reset;segBind('so_p',v=>{IN=PRE[v];reset();});
+  $('#so_a').onclick=()=>{if(timer){stop();return;}$('#so_a').textContent='멈춤';timer=setInterval(step,600);};
+  reset();
+})();
+
+(()=>{ // 실험 11-5
+  const A=[[1,2,0,1],[3,1,2,0],[0,1,1,2],[2,0,1,1]],Bm=[[1,0,2,1],[0,1,1,0],[2,1,0,1],[1,2,1,0]];let k=0;
+  function draw(){
+    const C=[...Array(4)].map(()=>Array(4).fill(0));for(let s=0;s<k;s++)for(let i=0;i<4;i++)for(let j=0;j<4;j++)C[i][j]+=A[i][s]*Bm[s][j];
+    let sv='';const cs=30,cx=200,cy=40;
+    sv+='<text x="20" y="28" class="dim" style="font-size:11px">A의 '+(k<4?k:'—')+'번째 열</text>';
+    for(let i=0;i<4;i++){const v=k<4?A[i][k]:null;sv+='<rect x="60" y="'+(cy+i*cs)+'" width="'+(cs-4)+'" height="'+(cs-4)+'" rx="3" style="fill:'+(v===null?'var(--sheet2)':'var(--p0)')+'"/>'+(v!==null?'<text x="'+(60+13)+'" y="'+(cy+i*cs+18)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:12px">'+v+'</text>':'');}
+    sv+='<text x="'+cx+'" y="20" class="dim" style="font-size:11px">B의 '+(k<4?k:'—')+'번째 행</text>';
+    for(let j=0;j<4;j++){const v=k<4?Bm[k][j]:null;sv+='<rect x="'+(cx+j*cs)+'" y="'+(cy-34)+'" width="'+(cs-4)+'" height="'+(cs-8)+'" rx="3" style="fill:'+(v===null?'var(--sheet2)':'var(--p3)')+'"/>'+(v!==null?'<text x="'+(cx+j*cs+13)+'" y="'+(cy-18)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:12px">'+v+'</text>':'');}
+    for(let i=0;i<4;i++)for(let j=0;j<4;j++){const on=k<4;sv+='<rect x="'+(cx+j*cs)+'" y="'+(cy+i*cs)+'" width="'+(cs-4)+'" height="'+(cs-4)+'" rx="3" class="box" style="'+(on?'stroke:var(--accent);stroke-width:2':'')+'"/><text x="'+(cx+j*cs+13)+'" y="'+(cy+i*cs+18)+'" text-anchor="middle" class="m" style="font-size:12px">'+C[i][j]+'</text>';}
+    sv+='<text x="'+(cx+130)+'" y="'+(cy+60)+'" class="dim" style="font-size:11px">C 블록 (누산기 16개)</text>';
+    $('#opsvg').innerHTML=sv;
+    $('#opmsg').innerHTML=k<4?'단계 '+k+': A 열의 값 4개와 B 행의 값 4개를 받아, 다음 클럭에 16칸 모두에 a[i]×b[j]를 더합니다. 받은 값 8개로 곱셈 16번입니다.':'K=4줄을 모두 받아 블록이 완성되었습니다. 곱셈 64번을 4사이클에 했고, 메모리에서는 값 32개만 받았습니다.';
+    $('#op_s').disabled=k>=4;
+  }
+  $('#op_s').onclick=()=>{if(k<4)k++;draw();};$('#op_r').onclick=()=>{k=0;draw();};draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'시스톨릭 배열에서 입력을 브로드캐스트하지 않고 이웃 PE로 한 칸씩 넘기는 가장 큰 이유는?',o:['곱셈 횟수를 줄이려고','배열이 커져도 긴 선이 생기지 않아 클럭을 유지하려고','메모리를 아끼려고'],a:1,e:'맞습니다. 모든 선이 이웃까지만 가므로 2장의 크리티컬 패스가 배열 크기와 무관해집니다.'},
+  {q:'K×N 가중치 고정 배열에서 행 k에 들어가는 입력을 k 사이클 늦게 넣는 이유는?',o:['행 k에 도착하는 부분합이 k 사이클 늦게 오므로 같은 벡터끼리 만나게 하려고','전력을 줄이려고','가중치를 싣는 시간을 벌려고'],a:0,e:'맞습니다. 부분합은 위쪽 PE k개를 거쳐 오므로, 입력도 같은 만큼 늦춰야 박자가 맞습니다.'},
+  {q:'8×8 배열, 배치 1로 64×16 행렬을 곱할 때 활용률이 낮은 주된 이유는?',o:['곱셈기가 너무 느려서','타일마다 싣기, 채우기, 비우기가 흘리기(1사이클)보다 훨씬 길어서','누산기가 부족해서'],a:1,e:'맞습니다. 배치 1이면 꽉 차서 일하는 구간이 타일당 1사이클뿐입니다. 배치를 키우면 이 비용이 여러 입력에 나뉩니다.'},
+  {q:'MAC 하나로 행렬 곱을 하면 곱셈 한 번에 메모리 접근이 약 2번 필요합니다. 16×16 가중치 고정 배열에서 배치가 충분히 크면?',o:['약 2번','약 1/8번','약 1/256번'],a:1,e:'맞습니다. 입력 16개와 출력 16개로 곱셈 256번을 하므로 2/16 = 1/8입니다. 가중치는 배치가 크면 무시할 만큼 작아집니다.'},
+  {q:'부분합을 PE 안에 붙잡아 두고 입력과 가중치를 흘리는 방식은?',o:['가중치 고정','출력 고정','입력 고정'],a:1,e:'맞습니다. 출력(부분합)이 PE에 머무르므로 출력 고정(output stationary)입니다.'},
+  {q:'바깥 곱 방식으로 B×B 블록을 만들 때 한 단계(한 사이클)에 받는 값과 하는 곱셈 수는?',o:['B개 받고 B번 곱한다','2B개 받고 B²번 곱한다','B²개 받고 B²번 곱한다'],a:1,e:'맞습니다. A의 열 B개와 B의 행 B개를 받아 B×B개를 모두 갱신합니다. 블록이 클수록 받은 값 하나당 곱셈이 늘어납니다.'},
+  {q:'재귀로 쓴 병합 정렬을 HLS로 합성하려면?',o:['그대로 합성된다','길이 1, 2, 4, …짜리 묶음을 합치는 단계별 반복문으로 바꾼다','정렬은 하드웨어로 만들 수 없다'],a:1,e:'맞습니다. 재귀 호출은 합성되지 않으므로 단계 수가 정해진 반복문으로 바꾸고, 단계마다 DATAFLOW 단계로 둘 수 있습니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch10-numbers-fir.html"><span>이전</span>10장. 수 표현과 DSP 예제</a><a class="nx" href="ch12-mini-tpu.html"><span>다음</span>12장. 미니 TPU로 숫자 인식</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li class="on">11장. 시스톨릭 배열</li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

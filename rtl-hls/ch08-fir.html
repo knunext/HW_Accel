@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8장. 같은 FIR 필터, RTL과 HLS | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">8장</span><span class="dots" aria-label="10장 중 8장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L181.8,58 L185.8,40 L426.8,40 L430.8,58 L671.8,58 L675.8,40 L916.8,40 L920.8,58 L980.0,58" style="stroke:var(--trace)"/></svg><div class="num">8장</div><h1>같은 FIR 필터, RTL과 HLS</h1><p class="lede">같은 4탭 FIR 필터를 손으로 짠 RTL과 HLS 두 가지로 만들어 나란히 비교합니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">8.1</span>FIR 필터</h2>
+<p>FIR(Finite Impulse Response) 필터는 최근 입력 몇 개에 계수를 곱해 더하는, 디지털 신호 처리에서 가장 흔한 회로입니다. 이 장에서는 계수가 h = [1, 3, 3, 1]인 4탭 필터를 씁니다. 신호를 부드럽게 만드는 저역 통과 필터입니다.</p>
+<div class="math">y[n] = h[0]·x[n] + h[1]·x[n−1] + h[2]·x[n−2] + h[3]·x[n−3]</div>
+<p>지금까지 배운 것을 모두 써서 같은 필터를 세 가지로 만들어 비교합니다.</p>
+<ul>
+<li><b>A. HLS, 지시어 없음</b>: C 코드를 그대로 합성.</li>
+<li><b>B. HLS, 지시어 추가</b>: 함수 전체에 PIPELINE II=1, 시프트 배열에 ARRAY_PARTITION complete.</li>
+<li><b>C. RTL 직접 설계</b>: 전치형(transposed) 구조로 손으로 짠 Verilog.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 8-1</b><span>세 가지 구현 들여다보기</span></figcaption>
+<div class="body">
+<div class="seg" id="f_sel"><button data-v="A" aria-pressed="true">A. HLS 기본</button><button data-v="B" aria-pressed="false">B. HLS 지시어</button><button data-v="C" aria-pressed="false">C. RTL 전치형</button></div>
+<div class="g2" style="margin-top:12px">
+<pre class="code" id="fcode" data-manual></pre>
+<div><div class="scroll"><svg id="fhw" class="sch" style="min-width:400px" viewBox="0 0 560 230" role="img" aria-label="FIR 구조"></svg></div>
+<p class="hint" id="fdesc"></p></div>
+</div>
+</div>
+</figure>
+
+<div class="prose">
+<p>A는 C 코드의 루프를 그대로 따라가서 곱셈기 하나를 네 번 돌려 씁니다. B는 함수에 PIPELINE을 걸면 도구가 안쪽 루프를 모두 펼치고, 배열을 레지스터로 쪼개 네 곱셈을 동시에 합니다. 합하는 순서는 도구가 정하고, 중간에 파이프라인 레지스터도 알아서 넣습니다. C는 곱한 값을 레지스터 사슬을 따라 더해 나가는 구조라서, 어느 레지스터 사이에도 곱셈 하나와 덧셈 하나밖에 없습니다.</p>
+<div class="note"><b>계수가 상수라면</b>
+3·x는 (x &lt;&lt; 1) + x로 바꿀 수 있습니다. 상수 곱셈은 합성기와 HLS 도구 모두 시프트와 덧셈으로 바꾸는 경우가 많아서, 실제로는 곱셈기(DSP)가 하나도 쓰이지 않을 수도 있습니다.</div>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 8-2</b><span>같은 입력, 다른 박자</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">입력 신호</span><div class="seg" id="f_sig"><button data-v="imp" aria-pressed="true">임펄스</button><button data-v="step" aria-pressed="false">계단</button><button data-v="sq" aria-pressed="false">사각파</button><button data-v="rnd" aria-pressed="false">무작위</button></div></div>
+<p class="hint">B와 C는 매 사이클 입력을 받습니다. A는 한 샘플을 처리하는 데 9사이클이 걸리므로 그동안 입력을 받지 못합니다. 모두 같은 값 y를 계산하지만 나오는 시점이 다릅니다.</p>
+<div class="scroll" id="fwave"></div>
+<table class="t" style="margin-top:12px">
+<tr><th></th><th>A. HLS 기본</th><th>B. HLS 지시어</th><th>C. RTL 전치형</th></tr>
+<tr><td>II (샘플 간격)</td><td class="m">9</td><td class="m">1</td><td class="m">1</td></tr>
+<tr><td>latency</td><td class="m">9</td><td class="m">3</td><td class="m">1</td></tr>
+<tr><td>곱셈기</td><td class="m">1</td><td class="m">4</td><td class="m">4</td></tr>
+<tr><td>레지스터 사이 최장 경로</td><td>곱셈 1</td><td>곱셈 1 또는 덧셈 1</td><td>곱셈 1 + 덧셈 1</td></tr>
+<tr><td>설계자가 정하는 것</td><td>알고리즘</td><td>알고리즘 + 지시어</td><td>사이클마다 모든 레지스터</td></tr>
+</table>
+<p class="hint">수치는 이 강의의 단순화된 모델입니다. 실제 HLS 도구의 결과는 목표 클럭과 연산 지연 설정에 따라 달라집니다.</p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">8.2</span>그래서 언제 무엇을 쓰나</h2>
+<p>RTL은 사이클과 레지스터를 하나하나 정할 수 있어서, 가장 작고 빠른 회로를 만들 수 있습니다. 대신 알고리즘을 조금만 바꿔도 코드를 크게 고쳐야 합니다. HLS는 알고리즘을 C로 빠르게 바꿔 보고, 지시어만 바꿔서 여러 설계(설계 공간)를 탐색하기 좋습니다. 대신 결과가 원하는 대로 나오게 하려면, 도구가 어떤 하드웨어를 만들지 머릿속에 그릴 수 있어야 합니다.</p>
+<p>결국 두 방식은 경쟁 관계가 아닙니다. 이 강의에서 배운 레지스터, 타이밍, FSMD, 파이프라인, 핸드셰이크는 HLS 리포트를 읽고 지시어를 고를 때 그대로 쓰는 지식입니다.</p>
+
+<h3>전체 정리</h3>
+<table class="t">
+<tr><th>개념</th><th>장</th><th>HLS에서 다시 만나는 곳</th></tr>
+<tr><td>레지스터와 조합 논리, <code>&lt;=</code></td><td class="m">1</td><td>변수가 레지스터가 되는지 여부</td></tr>
+<tr><td>setup, 크리티컬 패스</td><td class="m">2</td><td>목표 클럭과 연산 체이닝, 타이밍 리포트</td></tr>
+<tr><td>FSMD, major/minor FSM</td><td class="m">3</td><td>함수 = 컨트롤러 + 데이터패스, 함수 호출</td></tr>
+<tr><td>파이프라이닝, valid/ready, 배압</td><td class="m">4</td><td>PIPELINE, II, IL, ap_start/ap_done, 스트림 인터페이스</td></tr>
+<tr><td>CDC, 그레이 코드, 비동기 FIFO</td><td class="m">5</td><td>클럭이 다른 블록 사이의 연결</td></tr>
+<tr><td>스케줄링, 바인딩, 체이닝</td><td class="m">6</td><td>자원 수, 목표 클럭과 latency의 맞교환</td></tr>
+<tr><td>메모리 포트, 의존성</td><td class="m">7</td><td>UNROLL, ARRAY_PARTITION, II 위반 원인</td></tr>
+</table>
+
+<h2><span class="sec">8.3</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{
+  const H=[1,3,3,1];
+  const CODE={
+    A:'int fir(int x) {\n  static int shift[4];\n  const int h[4] = {1, 3, 3, 1};\n  int acc = 0;\n  for (int k = 3; k > 0; k--)\n    shift[k] = shift[k - 1];\n  shift[0] = x;\n  for (int k = 0; k < 4; k++)\n    acc += h[k] * shift[k];\n  return acc;\n}',
+    B:'int fir(int x) {\n#pragma HLS PIPELINE II=1\n  static int shift[4];\n#pragma HLS ARRAY_PARTITION variable=shift complete\n  const int h[4] = {1, 3, 3, 1};\n  int acc = 0;\n  for (int k = 3; k > 0; k--)\n    shift[k] = shift[k - 1];\n  shift[0] = x;\n  for (int k = 0; k < 4; k++)\n    acc += h[k] * shift[k];\n  return acc;\n}',
+    C:'module fir4 (input clk, input [15:0] x,\n             output reg [31:0] y);\n  reg [31:0] z1, z2, z3;\n  // 전치형: 곱한 값을 레지스터 사슬에 더해 나감\n  always @(posedge clk) begin\n    z3 <= 1 * x;\n    z2 <= z3 + 3 * x;\n    z1 <= z2 + 3 * x;\n    y  <= z1 + 1 * x;\n  end\nendmodule'};
+  const DESC={
+    A:'곱셈기와 덧셈기 하나씩을 루프 FSM이 네 번 돌려 씁니다. 시프트 배열은 메모리라 한 번에 두 칸까지만 읽고 쓸 수 있습니다. 작지만 느립니다.',
+    B:'루프가 모두 펼쳐지고 shift[]는 레지스터 네 개가 됩니다. 곱셈 네 개가 동시에 일어나고, 덧셈 트리 중간에 도구가 파이프라인 레지스터를 넣었습니다.',
+    C:'x가 네 곱셈기에 동시에 들어가고, 곱한 값이 z3 → z2 → z1 → y로 더해지며 흘러갑니다. 레지스터 사이 경로가 짧고 latency는 1사이클입니다.'};
+  const II={A:9,B:1,C:1},LAT={A:9,B:3,C:1};
+  const box=(x,y,w,h,t,st)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="3" class="box" style="'+(st||'')+'"/><text x="'+(x+w/2)+'" y="'+(y+h/2+5)+'" text-anchor="middle" style="font-size:12.5px">'+t+'</text>';
+  const mul=(x,y,t)=>'<rect x="'+x+'" y="'+y+'" width="52" height="28" rx="3" style="fill:var(--p1)"/><text x="'+(x+26)+'" y="'+(y+19)+'" text-anchor="middle" style="fill:var(--onacc);font-size:12.5px">'+t+'</text>';
+  const add=(x,y)=>'<circle cx="'+x+'" cy="'+y+'" r="15" style="fill:var(--p2)"/><text x="'+x+'" y="'+(y+5)+'" text-anchor="middle" style="fill:var(--onacc);font-size:15px">+</text>';
+  const reg=(x,y,t)=>'<rect x="'+x+'" y="'+y+'" width="46" height="26" rx="2" class="box" style="stroke-width:2"/><text x="'+(x+23)+'" y="'+(y+17)+'" text-anchor="middle" class="m" style="font-size:11.5px">'+t+'</text>';
+  const ln=d=>'<path d="'+d+'" class="thin" marker-end="url(#ah8)"/>';
+  const DEF='<defs><marker id="ah8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+  function hw(k){
+    let s=DEF;
+    if(k==='A'){
+      s+='<text x="8" y="118" class="m">x</text>'+ln('M22 114 H48')+box(50,94,110,40,'shift[0..3] 메모리','fill:var(--sheet2)')+ln('M160 114 H196')+mul(198,100,'× h[k]')+ln('M250 114 H286')+add(302,114)+ln('M317 114 H350')+reg(352,101,'acc')+ln('M398 114 H440')+'<text x="448" y="118" class="m">y</text>';
+      s+='<path d="M375 127 V160 H302 V131" class="thin" marker-end="url(#ah8)"/><text x="310" y="176" class="dim" style="font-size:11px">되먹임</text>';
+      s+=box(160,18,170,36,'루프 FSM (k = 0..3)')+'<path d="M200 54 V94 M224 54 V100 M300 54 V60 H375 V101" class="thin" style="stroke-dasharray:4 3"/>';
+      s+='<text x="50" y="214" class="dim" style="font-size:11.5px">곱셈기 1개를 4사이클에 걸쳐 돌려 씀</text>';
+    }else if(k==='B'){
+      s+='<text x="6" y="38" class="m">x</text>'+ln('M18 34 H42');
+      [0,1,2,3].forEach(i=>{const x=44+i*100;s+=reg(x,21,'s'+i);if(i<3)s+=ln('M'+(x+46)+' 34 H'+(x+98));s+=ln('M'+(x+23)+' 47 V72')+mul(x-3,74,'×'+H[i]);});
+      s+='<line x1="30" y1="114" x2="420" y2="114" style="stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4"/><text x="424" y="118" style="font-size:11px;fill:var(--accent)">파이프라인 레지스터</text>';
+      s+=ln('M67 102 V128 H105 V140')+ln('M167 102 V128 H129 V140')+ln('M267 102 V128 H305 V140')+ln('M367 102 V128 H329 V140');
+      s+=add(117,154)+add(317,154);
+      s+='<line x1="30" y1="182" x2="420" y2="182" style="stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4"/>';
+      s+=ln('M117 169 V196 H200 V200')+ln('M317 169 V196 H230 V200')+add(215,214);
+      s+=ln('M230 214 H300')+reg(302,201,'y')+'<text x="360" y="218" class="dim" style="font-size:11px">곱셈 4개가 동시에</text>';
+    }else{
+      s+='<text x="6" y="28" class="m">x</text><path d="M18 24 H470" class="wire" style="stroke:var(--trace)"/>';
+      const xs=[60,180,300,420],lab=['×1 (h3)','×3 (h2)','×3 (h1)','×1 (h0)'];
+      xs.forEach((x,i)=>{s+='<circle cx="'+(x+26)+'" cy="24" r="3" style="fill:var(--trace)"/>'+ln('M'+(x+26)+' 24 V54')+mul(x,56,lab[i].split(' ')[0])+'<text x="'+(x+26)+'" y="100" text-anchor="middle" class="dim" style="font-size:10.5px">'+lab[i].split(' ')[1]+'</text>';});
+      s+=ln('M86 84 V136')+reg(63,138,'z3')+ln('M109 151 H189');
+      s+=ln('M206 84 V136')+add(206,151)+ln('M221 151 H246')+reg(248,138,'z2')+ln('M294 151 H309');
+      s+=ln('M326 84 V136')+add(326,151)+ln('M341 151 H366')+reg(368,138,'z1')+ln('M414 151 H429');
+      s+=ln('M446 84 V136')+add(446,151)+ln('M461 151 H486')+reg(488,138,'y');
+      s+='<text x="63" y="196" class="dim" style="font-size:11.5px">레지스터 사이에는 곱셈 하나 + 덧셈 하나뿐</text>';
+    }
+    return s;
+  }
+  let K='A',SIG='imp';
+  function sig(){
+    const n=30;const x=[];let r=7;
+    for(let i=0;i<n;i++){
+      if(SIG==='imp')x.push(i===0?10:0);
+      else if(SIG==='step')x.push(10);
+      else if(SIG==='sq')x.push(Math.floor(i/4)%2===0?10:0);
+      else{r=(r*1103515245+12345)%2147483648;x.push(r%10);}
+    }
+    return x;
+  }
+  function drawCode(){
+    const pl=CODE[K].split('\n').map((l,i)=>l.startsWith('#pragma')?i:-1).filter(i=>i>=0);
+    $('#fcode').innerHTML=codeLines(CODE[K],pl);$('#fhw').innerHTML=hw(K);$('#fdesc').textContent=DESC[K];
+  }
+  function drawWave(){
+    const C=26,x=sig(),y=k=>H.reduce((a,h,j)=>a+(k-j>=0?h*x[k-j]:0),0);
+    const row=(ii,lat,isY)=>{const v=Array(C).fill('-');for(let k=0;k*ii<C;k++){const t=k*ii+(isY?lat:0);if(t<C)v[t]=isY?y(k):x[k];}return v;};
+    $('#fwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'x (B, C)',t:'v',sep:1,v:row(1,0,false)},{n:'y C (RTL)',t:'v',sep:1,v:row(1,1,true)},{n:'y B (HLS)',t:'v',sep:1,v:row(1,3,true)},{n:'x (A)',t:'v',sep:1,v:row(9,0,false)},{n:'y A (HLS)',t:'v',sep:1,v:row(9,9,true)}],{cycles:C,cw:34,lw:84});
+  }
+  segBind('f_sel',v=>{K=v;drawCode();});segBind('f_sig',v=>{SIG=v;drawWave();});
+  drawCode();drawWave();
+})();
+
+quiz($('#quiz'),[
+  {q:'B와 C는 둘 다 II=1인데 latency가 3과 1로 다릅니다. 이유는?',o:['B가 곱셈기를 더 적게 써서','B 안에 도구가 넣은 파이프라인 레지스터 단이 더 있어서','C가 클럭을 더 빠르게 써서'],a:1,e:'맞습니다. 처리량(II)은 같아도, 입력에서 출력까지 거치는 레지스터 단 수가 다르면 latency가 다릅니다. 4장의 내용 그대로입니다.'},
+  {q:'계수가 [1, 3, 3, 1]처럼 상수일 때 곱셈기에 대해 맞는 설명은?',o:['항상 DSP 곱셈기가 4개 필요하다','시프트와 덧셈으로 바뀌어 곱셈기가 필요 없을 수 있다','상수 곱셈은 합성할 수 없다'],a:1,e:'맞습니다. 3·x = (x &lt;&lt; 1) + x 처럼 바뀌므로 곱셈기 대신 덧셈기 몇 개로 충분합니다.'},
+  {q:'HLS가 RTL보다 특히 유리한 상황은?',o:['면적을 마지막 LUT까지 줄여야 할 때','알고리즘을 자주 바꾸며 여러 설계를 비교해 봐야 할 때','클럭 도메인을 여러 개 다뤄야 할 때'],a:1,e:'맞습니다. 지시어만 바꿔 설계 공간을 빠르게 탐색할 수 있는 것이 HLS의 가장 큰 장점입니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch07-hls-loops.html"><span>이전</span>7장. HLS 루프 지시어</a><a class="nx" href="ch09-systolic.html"><span>다음</span>9장. 시스톨릭 배열</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li class="on">8장. 같은 FIR 필터, RTL과 HLS</li><li><a href="ch09-systolic.html">9장. 시스톨릭 배열</a></li><li><a href="ch10-mini-tpu.html">10장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

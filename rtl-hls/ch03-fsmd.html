@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3장. FSMD | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">3장</span><span class="dots" aria-label="12장 중 3장"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L304.2,40 L308.2,58 L549.2,58 L553.2,40 L733.0,40 L737.0,58 L916.8,58 L920.8,40 L980.0,40" style="stroke:var(--trace)"/></svg><div class="num">3장</div><h1>FSMD: 컨트롤러와 데이터패스</h1><p class="lede">Mealy/Moore FSM에 데이터패스를 붙여 숫자를 계산하고, 큰 FSM이 작은 FSM을 부리는 구조를 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">3.1</span>FSM만으로는 계산을 못 한다</h2>
+<p>지난 학기에 만든 Mealy/Moore 머신의 입력은 대개 1비트였습니다. “1이 세 번 들어오면 출력” 같은 일은 잘하지만, 두 수의 최대공약수를 구하는 일은 어떨까요? 8비트 숫자 두 개를 상태로 표현하려면 상태가 65,536개 필요합니다.</p>
+<p>그래서 숫자는 <b>데이터패스</b>(레지스터, 연산기, MUX)에 맡기고, FSM은 “이번 사이클에 데이터패스가 무엇을 할지”만 정하게 합니다. FSM 쪽을 <b>컨트롤러</b>라고 부르고, 둘을 합친 구조를 FSMD(FSM with Datapath)라고 합니다.</p>
+<ul>
+<li>컨트롤러 → 데이터패스: <b>제어 신호</b>. 어느 레지스터에 쓸지(load), MUX가 무엇을 고를지(select).</li>
+<li>데이터패스 → 컨트롤러: <b>상태 신호</b>. 비교 결과처럼 다음 상태를 정하는 데 필요한 정보.</li>
+</ul>
+
+<h2><span class="sec">3.2</span>예제: 유클리드 호제법</h2>
+<pre class="code">
+while (a != b) {
+  if (a &gt; b) a = a - b;
+  else       b = b - a;
+}
+return a;   // 최대공약수
+</pre>
+<p>이 C 코드를 하드웨어로 옮기면, 변수 a와 b는 레지스터 A와 B가 되고, 뺄셈은 감산기, 비교는 비교기가 됩니다. 반복문의 흐름은 컨트롤러의 상태가 됩니다.</p>
+<ul>
+<li><b>IDLE</b>: start가 오면 입력 a_in, b_in을 A, B에 싣고 CALC로.</li>
+<li><b>CALC</b>: A==B이면 DONE으로. 아니면 A&gt;B일 때 A ← A−B, 아닐 때 B ← B−A를 하고 CALC에 머뭄.</li>
+<li><b>DONE</b>: done=1. start가 다시 오면 새 계산 시작.</li>
+</ul>
+<p>CALC 상태에서 ld_a, ld_b는 상태뿐 아니라 상태 신호 gt에도 의존합니다. 즉 이 컨트롤러의 출력 일부는 <b>Mealy</b> 출력입니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 3-1</b><span>최대공약수 회로를 한 사이클씩</span></figcaption>
+<div class="body">
+<div class="ctrl"><label class="lbl">a_in <input type="number" id="ga" min="1" max="255" value="48"></label><label class="lbl">b_in <input type="number" id="gb" min="1" max="255" value="18"></label></div>
+<div class="g2">
+<svg id="gctl" class="sch" style="min-width:0" viewBox="0 0 260 214" role="img" aria-label="컨트롤러 상태도"></svg>
+<svg id="gdp" class="sch" style="min-width:0" viewBox="0 0 300 230" role="img" aria-label="데이터패스"></svg>
+</div>
+<div class="ctrl">
+<button id="gstart" class="pri">start=1로 클럭 ↑</button><button id="gclk">클럭 ↑</button><button id="gauto">자동 실행</button><button id="grst">리셋</button>
+<span class="lbl" id="gcyc"></span>
+</div>
+<p class="msg" id="gmsg"></p>
+<div class="scroll" id="gwave"></div>
+</div>
+</figure>
+
+<div class="prose">
+<p>위 회로를 Verilog로 쓰면 이렇습니다. 데이터패스, 상태 레지스터, 다음 상태/출력 논리를 세 덩어리로 나누는 것이 일반적입니다.</p>
+<pre class="code">
+// 1) 데이터패스: 레지스터 + 연산기 + MUX
+always @(posedge clk) begin
+  if (ld_a) A &lt;= sel ? (A - B) : a_in;
+  if (ld_b) B &lt;= sel ? (B - A) : b_in;
+end
+assign eq = (A == B);
+assign gt = (A &gt; B);
+
+// 2) 컨트롤러: 상태 레지스터
+always @(posedge clk)
+  if (rst) state &lt;= IDLE;
+  else     state &lt;= next;
+
+// 3) 컨트롤러: 다음 상태와 출력 (조합 논리)
+always @(*) begin
+  next = state; ld_a = 0; ld_b = 0; sel = 0; done = 0;  // 기본값 먼저!
+  case (state)
+    IDLE: if (start) begin ld_a = 1; ld_b = 1; next = CALC; end
+    CALC: if (eq)      next = DONE;
+          else if (gt) begin ld_a = 1; sel = 1; end
+          else         begin ld_b = 1; sel = 1; end
+    DONE: begin
+            done = 1;
+            if (start) begin ld_a = 1; ld_b = 1; next = CALC; end
+          end
+  endcase
+end
+</pre>
+<div class="note warn"><b>기본값을 먼저 대입하는 이유</b>
+<code>always @(*)</code> 안에서 어떤 경로로 들어갔을 때 <code>ld_a</code>에 아무것도 대입하지 않으면, “이전 값을 유지하라”는 뜻이 되어 합성기가 래치를 만듭니다. 블록 첫 줄에 모든 출력의 기본값을 적어 두면 이 실수를 원천적으로 막을 수 있습니다.</div>
+
+<h2><span class="sec">3.3</span>큰 FSM이 작은 FSM을 부리기: major/minor FSM</h2>
+<p>이번엔 세 수 x, y, z의 최대공약수를 구한다고 해 봅시다. gcd(gcd(x, y), z)이므로 위의 GCD 회로를 두 번 쓰면 됩니다. 모든 경우를 상태 하나짜리 FSM에 몰아넣는 대신, 일의 순서를 지휘하는 <b>major FSM</b>과 실제 계산을 하는 <b>minor FSM</b>(위의 GCD 회로)으로 나눕니다. 함수 호출과 비슷합니다.</p>
+<p>둘은 <code>start</code>와 <code>done</code> 두 신호로 대화합니다. major는 start를 한 사이클 올려 일을 맡기고, minor가 done을 올릴 때까지 대기 상태에서 기다립니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 3-2</b><span>major FSM이 GCD 회로를 두 번 부르기</span></figcaption>
+<div class="body">
+<div class="ctrl"><label class="lbl">x <input type="number" id="mx" min="1" max="255" value="60"></label><label class="lbl">y <input type="number" id="my" min="1" max="255" value="48"></label><label class="lbl">z <input type="number" id="mz" min="1" max="255" value="18"></label></div>
+<div class="scroll"><svg id="msvg" class="sch" viewBox="0 0 560 275" role="img" aria-label="major와 minor 상태도"></svg></div>
+<div class="ctrl"><button id="mclk" class="pri">클럭 ↑</button><button id="mauto">자동 실행</button><button id="mrst">리셋</button><span class="lbl" id="mcyc"></span></div>
+<p class="msg" id="mmsg"></p>
+<div class="scroll" id="mwave"></div>
+</div>
+</figure>
+
+<div class="prose">
+<p>이렇게 나누면 각 FSM이 단순해지고, minor FSM은 다른 곳에서 그대로 다시 쓸 수 있습니다. 대가는 start/done을 주고받느라 생기는 몇 사이클입니다. 6장에서 보겠지만, HLS 도구도 C 함수 하나를 이런 식으로 FSM과 데이터패스로 바꾸고, 함수 호출은 start/done 핸드셰이크로 바꿉니다.</p>
+
+<h2><span class="sec">3.4</span>알고리즘에서 FSMD까지: 설계 절차</h2>
+<p>앞에서는 완성된 GCD 회로를 보았습니다. 새 문제를 혼자 풀 때는 아래 절차를 따르면 막히지 않습니다.</p>
+<ol>
+<li><b>알고리즘 쓰기</b>: C나 의사코드로 한 번 씁니다.</li>
+<li><b>재료 정하기</b>: 변수는 레지스터, 연산은 연산기, 조건은 비교기가 됩니다. 비트 폭도 이때 정합니다.</li>
+<li><b>ASMD 차트 그리기</b>: 상태(사각형), 판단(마름모), 조건부 출력(둥근 상자)으로 사이클 단위 흐름을 그립니다. 사각형 하나가 한 사이클입니다.</li>
+<li><b>데이터패스 그리기</b>: 레지스터마다 어떤 값이 들어올 수 있는지 보고 MUX와 load 신호를 붙입니다.</li>
+<li><b>컨트롤러 표 만들기</b>: (현재 상태, 상태 신호) → (다음 상태, 제어 신호) 표를 만들면 그대로 <code>case</code> 문이 됩니다.</li>
+</ol>
+<p>GCD의 ASMD 차트는 이렇습니다. 실험 3-1의 상태도와 Verilog를 이 그림과 한 줄씩 맞대어 보세요. 그림을 단순하게 하려고 DONE에서 start를 다시 보는 부분은 생략했습니다.</p>
+<div class="scroll"><svg class="sch" viewBox="0 0 560 320" role="img" aria-label="GCD ASMD 차트">
+<defs><marker id="ah3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>
+<rect x="210" y="8" width="140" height="32" class="box"/><text x="280" y="29" text-anchor="middle" class="m">IDLE</text>
+<path d="M280 40 V50" class="thin" marker-end="url(#ah3a)"/>
+<path d="M280 52 L326 72 L280 92 L234 72 Z" class="box"/><text x="280" y="77" text-anchor="middle" class="m" style="font-size:12px">start?</text>
+<path d="M326 72 H358" class="thin" marker-end="url(#ah3a)"/><text x="334" y="66" class="m dim" style="font-size:10px">1</text>
+<rect x="360" y="58" width="150" height="28" rx="14" class="box"/><text x="435" y="77" text-anchor="middle" class="m" style="font-size:11.5px">ld_a=1, ld_b=1</text>
+<path d="M435 86 V128 H352" class="thin" marker-end="url(#ah3a)"/>
+<path d="M234 72 H180 V24 H208" class="thin" marker-end="url(#ah3a)"/><text x="214" y="66" class="m dim" style="font-size:10px">0</text>
+<rect x="210" y="112" width="140" height="32" class="box"/><text x="280" y="133" text-anchor="middle" class="m">CALC</text>
+<path d="M280 144 V158" class="thin" marker-end="url(#ah3a)"/>
+<path d="M280 160 L326 180 L280 200 L234 180 Z" class="box"/><text x="280" y="185" text-anchor="middle" class="m" style="font-size:12px">eq?</text>
+<path d="M326 180 H388" class="thin" marker-end="url(#ah3a)"/><text x="334" y="174" class="m dim" style="font-size:10px">1</text>
+<rect x="390" y="164" width="130" height="32" class="box"/><text x="455" y="185" text-anchor="middle" class="m" style="font-size:12px">DONE  done=1</text>
+<path d="M520 180 H540 V24 H352" class="thin" marker-end="url(#ah3a)"/>
+<path d="M280 200 V214" class="thin" marker-end="url(#ah3a)"/><text x="286" y="211" class="m dim" style="font-size:10px">0</text>
+<path d="M280 216 L326 236 L280 256 L234 236 Z" class="box"/><text x="280" y="241" text-anchor="middle" class="m" style="font-size:12px">gt?</text>
+<path d="M234 236 H192" class="thin" marker-end="url(#ah3a)"/><text x="214" y="230" class="m dim" style="font-size:10px">1</text>
+<rect x="40" y="222" width="150" height="28" rx="14" class="box"/><text x="115" y="241" text-anchor="middle" class="m" style="font-size:11.5px">ld_a=1, sel=1</text>
+<path d="M115 222 V124 H208" class="thin" marker-end="url(#ah3a)"/>
+<path d="M326 236 H350" class="thin" marker-end="url(#ah3a)"/><text x="332" y="230" class="m dim" style="font-size:10px">0</text>
+<rect x="352" y="222" width="150" height="28" rx="14" class="box"/><text x="427" y="241" text-anchor="middle" class="m" style="font-size:11.5px">ld_b=1, sel=1</text>
+<path d="M427 250 V296 H24 V136 H208" class="thin" marker-end="url(#ah3a)"/>
+<text x="24" y="316" class="dim" style="font-size:11px">사각형 = 상태(한 사이클, 안의 출력은 Moore)　마름모 = 판단　둥근 상자 = 조건부 출력(Mealy)</text>
+</svg></div>
+<p><b>연습</b>: 4비트 수 두 개를 곱하는 시프트-덧셈 곱셈기를 같은 절차로 설계해 보세요.</p>
+<pre class="code">
+P = 0;  A = a;  B = b;  n = 4;
+while (n != 0) {
+  if (B &amp; 1) P = P + A;
+  A = A &lt;&lt; 1;  B = B &gt;&gt; 1;  n = n - 1;
+}
+return P;
+</pre>
+<details><summary>답 보기</summary>
+<p>레지스터는 P(8비트), A(8비트), B(4비트), n(3비트)입니다. 연산기는 덧셈기 하나, 시프터 둘, 감산기(또는 카운터) 하나, n==0 비교기 하나입니다.</p>
+<table class="t">
+<tr><th>현재 상태</th><th>조건</th><th>다음 상태</th><th>제어 신호</th></tr>
+<tr><td class="m">IDLE</td><td class="m">start=1</td><td class="m">RUN</td><td>P←0, A←a, B←b, n←4</td></tr>
+<tr><td class="m">RUN</td><td class="m">n==0</td><td class="m">DONE</td><td>없음</td></tr>
+<tr><td class="m">RUN</td><td class="m">n!=0, B[0]=1</td><td class="m">RUN</td><td>P←P+A, A←A&lt;&lt;1, B←B&gt;&gt;1, n←n−1</td></tr>
+<tr><td class="m">RUN</td><td class="m">n!=0, B[0]=0</td><td class="m">RUN</td><td>A←A&lt;&lt;1, B←B&gt;&gt;1, n←n−1</td></tr>
+<tr><td class="m">DONE</td><td class="m">-</td><td class="m">DONE</td><td>done=1</td></tr>
+</table>
+<p>RUN 상태에서 P를 쓸지(ld_p)가 B[0]에 따라 달라지므로 이 출력도 Mealy입니다. GCD와 똑같은 모양이라는 점을 확인하세요.</p>
+</details>
+
+<h3>감산기 하나로 줄이기: 자원 공유</h3>
+<p>GCD 데이터패스에는 A−B와 B−A 감산기가 두 개 있지만, 한 사이클에 둘 중 하나만 씁니다. 큰 쪽과 작은 쪽을 MUX로 먼저 고르면 감산기 하나로 충분합니다.</p>
+<pre class="code">
+wire [7:0] big   = gt ? A : B;
+wire [7:0] small = gt ? B : A;
+wire [7:0] diff  = big - small;          // 감산기 하나를 두 경우가 나눠 씀
+always @(posedge clk) begin
+  if (ld_a) A &lt;= sel ? diff : a_in;
+  if (ld_b) B &lt;= sel ? diff : b_in;
+end
+</pre>
+<p>감산기는 하나 줄었지만 MUX 두 개가 생기고, 비교 → MUX → 뺄셈으로 경로가 길어집니다. 연산기를 줄이는 대신 MUX와 지연을 내주는 이 맞교환이 6장에서 HLS 도구가 하는 바인딩의 핵심입니다. 감산기처럼 작은 연산기라면 공유하지 않는 편이 나을 때도 많고, 곱셈기처럼 큰 연산기일수록 공유할 가치가 큽니다.</p>
+
+<h2><span class="sec">3.5</span>상태 번호 붙이기와 출력 글리치</h2>
+<p>상태를 플립플롭에 어떻게 담을지도 설계자가 정합니다. 상태가 N개일 때 방법은 크게 셋입니다.</p>
+<ul>
+<li><b>binary</b>: 0, 1, 2, …를 그대로 씁니다. 플립플롭은 log<sub>2</sub>N개로 가장 적지만, 다음 상태 논리가 모든 비트를 봐야 해서 복잡해지기 쉽습니다.</li>
+<li><b>one-hot</b>: 상태마다 플립플롭 하나, 늘 하나만 1입니다. 플립플롭은 N개지만 다음 상태 논리가 아주 단순합니다. 플립플롭이 넉넉한 FPGA에서 합성 도구가 기본으로 고르는 경우가 많습니다.</li>
+<li><b>gray</b>: 차례로 넘어가는 상태끼리 한 비트만 다르게 번호를 붙입니다. 5장의 그레이 코드와 같습니다.</li>
+</ul>
+<p>번호 붙이는 방식은 출력에도 영향을 줍니다. 상태 비트들은 엣지 뒤 조금씩 다른 시각에 바뀌므로, binary에서 01→10으로 갈 때 아주 잠깐 11이나 00을 거칠 수 있습니다. 상태를 해석해서 바로 내보내는 조합 출력에는 이 순간이 <b>글리치</b>로 튀어나옵니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 3-4</b><span>상태 비트가 어긋나는 순간</span></figcaption>
+<div class="body">
+<p class="hint">S0→S1→S2→S3→S0을 도는 FSM입니다. 출력 z는 “지금 S3인가”이고, 조합 논리로 바로 낸 것과 레지스터를 거쳐 낸 것을 비교합니다. 한 사이클을 10칸으로 그렸습니다.</p>
+<div class="ctrl"><span class="lbl">상태 번호</span><div class="seg" id="en_k"><button data-v="bin" aria-pressed="true">binary (00, 01, 10, 11)</button><button data-v="gray" aria-pressed="false">gray (00, 01, 11, 10)</button></div></div>
+<label class="sl"><span>늦게 바뀌는 비트</span><input type="range" id="en_d" min="-4" max="4" value="-2"><output id="en_dv"></output></label>
+<div class="scroll" id="enwave"></div>
+<p class="msg" id="enmsg"></p>
+<div class="sub">상태 수에 따른 플립플롭 개수</div>
+<label class="sl"><span>상태 수</span><input type="range" id="en_n" min="3" max="32" value="6"><output id="en_nv"></output></label>
+<div class="stats" id="enstats"></div>
+</div>
+</figure>
+
+<div class="prose">
+<p>출력을 레지스터로 내면(다음 상태를 보고 미리 계산해서 엣지에 맞춰 내보내면) 글리치가 사라지고, 다음 회로가 받는 타이밍도 깔끔해집니다. 다른 클럭 도메인이나 칩 바깥으로 나가는 출력, 리셋이나 enable처럼 글리치가 치명적인 신호는 꼭 레지스터로 내보냅니다.</p>
+
+<h2><span class="sec">3.6</span>맞게 만들었는지 확인하기: 테스트벤치</h2>
+<p>회로를 만들었으면 맞는지 확인해야 합니다. 시뮬레이션용 Verilog 모듈인 <b>테스트벤치</b>가 설계한 회로(DUT)에 입력을 넣고, 같은 입력을 넣은 <b>정답 모델</b>의 결과와 비교합니다. 사람이 파형을 눈으로 보는 대신 테스트벤치가 스스로 맞고 틀림을 판단하게 만드는 것이 핵심입니다(self-checking).</p>
+<pre class="code">
+module tb;
+  reg clk = 0, rst = 1, start = 0;
+  reg  [7:0] a_in, b_in;
+  wire [7:0] A;  wire done;
+  gcd dut (.clk(clk), .rst(rst), .start(start), .a_in(a_in), .b_in(b_in), .A(A), .done(done));
+
+  always #5 clk = ~clk;                        // 클럭 만들기 (합성 안 됨)
+
+  function [7:0] gold (input [7:0] x, input [7:0] y);   // 정답 모델
+    begin
+      while (x != y) if (x &gt; y) x = x - y; else y = y - x;
+      gold = x;
+    end
+  endfunction
+
+  integer i, err = 0;
+  initial begin
+    #20 rst = 0;
+    for (i = 0; i &lt; 100; i = i + 1) begin
+      a_in = 1 + {$random} % 255;  b_in = 1 + {$random} % 255;
+      @(negedge clk) start = 1;               // 입력은 반대쪽 엣지에서 바꾼다
+      @(negedge clk) start = 0;
+      wait (done);  @(negedge clk);
+      if (A !== gold(a_in, b_in)) begin
+        err = err + 1;
+        $display("틀림: gcd(%0d, %0d) = %0d", a_in, b_in, A);
+      end
+    end
+    $display("검사 100개 중 오류 %0d개", err);
+    $finish;
+  end
+endmodule
+</pre>
+<ul>
+<li>입력을 클럭의 반대쪽 엣지(negedge)에서 바꾸면, 회로가 입력을 읽는 상승 엣지와 겹치지 않아 1장에서 본 것 같은 순서 문제가 생기지 않습니다.</li>
+<li>무작위 입력 100개로 끝내지 말고, 경계 사례(a=b, a=1, 255와 1 등)도 따로 넣습니다.</li>
+<li>테스트가 통과하지 않으면 파형을 봅니다. 아래에서 연습해 봅시다.</li>
+</ul>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 3-5</b><span>파형으로 버그 찾기</span></figcaption>
+<div class="body">
+<p class="hint">GCD 회로에 버그를 하나씩 심었습니다. gcd(48, 18)을 넣고 돌린 파형과 코드를 보고, 어느 줄이 틀렸는지 골라 보세요.</p>
+<div class="seg" id="bug_k"><button data-v="1" aria-pressed="true">버그 1</button><button data-v="2" aria-pressed="false">버그 2</button><button data-v="3" aria-pressed="false">버그 3</button></div>
+<div class="scroll" id="bugwave" style="margin-top:10px"></div>
+<pre class="code" id="bugcode" data-manual></pre>
+<div id="bugq"></div>
+</div>
+</figure>
+
+<div class="prose">
+<div class="recap"><b>이 장의 요점</b><ul><li>숫자는 데이터패스가, 순서는 컨트롤러가 맡고, 둘은 상태 신호와 제어 신호로 대화합니다.</li><li>알고리즘 → 재료 정하기 → ASMD 차트 → 데이터패스 → 컨트롤러 표 순서로 설계합니다.</li><li><code>always @(*)</code>에는 기본값을 먼저 쓰고, 바깥으로 나가는 출력은 레지스터로 냅니다.</li><li>테스트벤치는 정답 모델과 스스로 비교하게 만듭니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 1.3 FPGA Design Process, 6.3 Testbench (HLS에서 같은 생각을 C로 합니다)</p></div>
+<h2><span class="sec">3.7</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+function gcdComb(st,start,a,b){
+  const eq=st.A===st.B?1:0,gt=st.A>st.B?1:0;let next=st.s,ld_a=0,ld_b=0,sel=0,done=0;
+  if(st.s==='IDLE'){if(start){ld_a=ld_b=1;next='CALC';}}
+  else if(st.s==='CALC'){if(eq)next='DONE';else if(gt){ld_a=1;sel=1;}else{ld_b=1;sel=1;}}
+  else{done=1;if(start){ld_a=ld_b=1;next='CALC';}}
+  const A=ld_a?(sel?st.A-st.B:a):st.A,B=ld_b?(sel?st.B-st.A:b):st.B;
+  return {sig:{eq,gt,ld_a,ld_b,sel,done},nx:{s:next,A,B}};
+}
+function stateDiagram(cur,ox,oy){
+  const P={IDLE:[ox+45,oy+50],CALC:[ox+190,oy+50],DONE:[ox+118,oy+160]};
+  let s='<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+  const ar=(d,t,tx,ty)=>'<path d="'+d+'" class="thin" marker-end="url(#ah)"/><text x="'+tx+'" y="'+ty+'" text-anchor="middle" class="m dim" style="font-size:11px">'+t+'</text>';
+  s+=ar('M'+(ox+79)+','+(oy+44)+' L'+(ox+154)+','+(oy+44),'start',ox+117,oy+36);
+  s+=ar('M'+(ox+176)+','+(oy+84)+' L'+(ox+140)+','+(oy+127),'eq',ox+172,oy+112);
+  s+=ar('M'+(ox+108)+','+(oy+126)+' Q'+(ox+100)+','+(oy+95)+' '+(ox+160)+','+(oy+78),'start',ox+92,oy+104);
+  s+=ar('M'+(ox+205)+','+(oy+17)+' C'+(ox+215)+','+(oy-14)+' '+(ox+235)+','+(oy+8)+' '+(ox+222)+','+(oy+34),'!eq',ox+240,oy+10);
+  for(const k in P){const [x,y]=P[k],on=k===cur;
+    s+='<circle cx="'+x+'" cy="'+y+'" r="34" class="box" style="'+(on?'fill:var(--accent-soft);stroke:var(--accent);stroke-width:3':'')+'"/><text x="'+x+'" y="'+(y+5)+'" text-anchor="middle" class="m" style="font-weight:'+(on?600:400)+'">'+k+'</text>';}
+  return s;
+}
+(()=>{ // 실험 3-1
+  let st,H,timer=null;
+  const ab=()=>[Math.max(1,Math.min(255,+$('#ga').value||1)),Math.max(1,Math.min(255,+$('#gb').value||1))];
+  function reset(){st={s:'IDLE',A:0,B:0};H={st:[],A:[],B:[],start:[],eq:[],gt:[],ld_a:[],ld_b:[],done:[]};stop();
+    $('#gmsg').innerHTML='IDLE 상태입니다. <b>start=1로 클럭</b>을 눌러 입력을 싣습니다.';draw(null);}
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#gauto').textContent='자동 실행';}}
+  function clk(start){
+    const [a,b]=ab(),r=gcdComb(st,start,a,b);
+    H.st.push(st.s);H.A.push(st.A);H.B.push(st.B);H.start.push(start);for(const k of ['eq','gt','ld_a','ld_b','done'])H[k].push(r.sig[k]);
+    let m;
+    if(st.s!=='CALC'&&start)m='start=1을 보고 a_in='+a+', b_in='+b+'을 A, B에 실었습니다 (ld_a=ld_b=1, sel=0).';
+    else if(st.s==='CALC'&&r.sig.eq)m='A==B (eq=1). 다음 상태는 DONE입니다. 결과는 '+st.A+'.';
+    else if(st.s==='CALC'&&r.sig.gt)m='A&gt;B (gt=1)이므로 ld_a=1, sel=1. A ← '+st.A+'−'+st.B+' = '+r.nx.A;
+    else if(st.s==='CALC')m='A&lt;B (gt=0)이므로 ld_b=1, sel=1. B ← '+st.B+'−'+st.A+' = '+r.nx.B;
+    else if(st.s==='DONE')m='DONE 상태, done=1. 최대공약수는 '+st.A+'입니다.';
+    else m='IDLE에서 start를 기다리는 중입니다.';
+    st=r.nx;$('#gmsg').innerHTML=m;
+    if(st.s==='DONE'&&H.st[H.st.length-1]==='DONE')stop();
+    draw(r);
+  }
+  function draw(){
+    $('#gctl').innerHTML=stateDiagram(st.s,6,14);
+    const [a,b]=ab(),pre=gcdComb(st,0,a,b).sig;
+    const on=v=>v?'var(--accent)':'var(--ink2)',w=v=>v?600:400;
+    const reg=(x,y,n,v)=>'<rect x="'+x+'" y="'+y+'" width="62" height="40" rx="2" class="box"/><text x="'+(x+8)+'" y="'+(y+15)+'" class="m dim" style="font-size:11px">'+n+'</text><text x="'+(x+38)+'" y="'+(y+31)+'" text-anchor="middle" class="m" style="font-size:17px;font-weight:500">'+v+'</text>';
+    const mux=(y)=>'<path d="M30 '+y+' L56 '+(y+10)+' L56 '+(y+40)+' L30 '+(y+50)+' Z" class="box"/>';
+    const sub=(x,y,t,v)=>'<rect x="'+x+'" y="'+y+'" width="64" height="40" rx="2" class="box"/><text x="'+(x+32)+'" y="'+(y+16)+'" text-anchor="middle" class="m dim" style="font-size:11.5px">'+t+'</text><text x="'+(x+32)+'" y="'+(y+32)+'" text-anchor="middle" class="m">'+v+'</text>';
+    let s='';
+    s+='<text x="0" y="27" class="m dim" style="font-size:10.5px">a_in</text><text x="0" y="117" class="m dim" style="font-size:10.5px">b_in</text>';
+    s+=mux(18)+mux(108);
+    s+='<path d="M18 31 H30 M18 121 H30 M56 43 H96 M56 133 H96 M158 43 H200 M158 133 H200 M176 43 V198 M176 145 H200 M182 133 V55 H200 M182 133 V198 M264 43 H280 V96 H22 V58 H30 M264 133 H280 V186 H22 V148 H30" class="thin"/>';
+    s+=reg(96,23,'A',st.A)+reg(96,113,'B',st.B);
+    s+=sub(200,23,'A−B',st.A-st.B)+sub(200,113,'B−A',st.B-st.A);
+    s+='<text x="127" y="16" text-anchor="middle" class="m" style="font-size:11.5px;fill:'+on(pre.ld_a)+';font-weight:'+w(pre.ld_a)+'">ld_a='+pre.ld_a+'</text>';
+    s+='<text x="127" y="106" text-anchor="middle" class="m" style="font-size:11.5px;fill:'+on(pre.ld_b)+';font-weight:'+w(pre.ld_b)+'">ld_b='+pre.ld_b+'</text>';
+    s+='<text x="43" y="82" text-anchor="middle" class="m" style="font-size:10.5px;fill:'+on(pre.sel)+'">sel</text><text x="43" y="172" text-anchor="middle" class="m" style="font-size:10.5px;fill:'+on(pre.sel)+'">sel</text>';
+    s+='<rect x="120" y="198" width="170" height="28" rx="2" class="box"/><text x="205" y="217" text-anchor="middle" class="m" style="font-size:12px">eq='+pre.eq+'  gt='+pre.gt+'</text>';
+    $('#gdp').innerHTML=s;
+    $('#gcyc').textContent='진행한 사이클: '+H.st.length;
+    const n=H.st.length;
+    if(n===0){$('#gwave').innerHTML='';return;}
+    const k0=Math.max(0,n-20),sl=a=>a.slice(k0);
+    $('#gwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'start',t:'b',v:sl(H.start)},{n:'state',t:'v',v:sl(H.st)},{n:'A',t:'v',v:sl(H.A)},{n:'B',t:'v',v:sl(H.B)},{n:'eq',t:'b',v:sl(H.eq)},{n:'gt',t:'b',v:sl(H.gt)},{n:'ld_a',t:'b',v:sl(H.ld_a)},{n:'ld_b',t:'b',v:sl(H.ld_b)},{n:'done',t:'b',v:sl(H.done),col:'var(--p3)'}],{cycles:n-k0,cw:44,lw:52,axis0:k0});
+  }
+  $('#gstart').onclick=()=>clk(1);
+  $('#gclk').onclick=()=>clk(0);
+  $('#grst').onclick=reset;
+  $('#gauto').onclick=()=>{if(timer){stop();return;}if(st.s!=='CALC')clk(1);$('#gauto').textContent='멈춤';timer=setInterval(()=>{if(st.s==='DONE'){clk(0);stop();}else clk(0);},650);};
+  reset();
+})();
+
+(()=>{ // 실험 3-2
+  let M,mi,H,g1,res,cyc,timer=null;
+  const MS=['IDLE','S1','W1','S2','W2','FIN'];
+  const v=id=>Math.max(1,Math.min(255,+$('#'+id).value||1));
+  function reset(){M='IDLE';mi={s:'IDLE',A:0,B:0};g1=null;res=null;cyc=0;H={M:[],m:[],start:[],done:[],A:[],B:[]};stop();
+    $('#mmsg').innerHTML='major FSM이 IDLE에 있습니다. 클럭을 누르면 일을 시작합니다.';draw();}
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#mauto').textContent='자동 실행';}}
+  function clk(){
+    if(M==='FIN'){stop();return;}
+    let start=0,opa=0,opb=0,nM=M,msg='';
+    if(M==='S1'){start=1;opa=v('mx');opb=v('my');}
+    if(M==='S2'){start=1;opa=g1;opb=v('mz');}
+    const r=gcdComb(mi,start,opa,opb),done=r.sig.done;
+    if(M==='IDLE'){nM='S1';msg='major: IDLE → S1. 첫 번째 일을 맡길 준비를 합니다.';}
+    else if(M==='S1'){nM='W1';msg='major S1: start=1, 피연산자 (x, y) = ('+opa+', '+opb+'). minor가 받아서 CALC로 갑니다.';}
+    else if(M==='W1'){if(done){g1=mi.A;nM='S2';msg='major W1: done=1을 보고 결과 '+g1+'을 g1에 저장했습니다.';}else msg='major W1: minor가 계산하는 동안 기다립니다 (done=0).';}
+    else if(M==='S2'){nM='W2';msg='major S2: start=1, 피연산자 (g1, z) = ('+opa+', '+opb+'). 같은 minor FSM을 다시 부릅니다.';}
+    else if(M==='W2'){if(done){res=mi.A;nM='FIN';msg='major W2: done=1. 최종 결과 gcd(x, y, z) = <b>'+res+'</b>';}else msg='major W2: 두 번째 계산을 기다립니다.';}
+    H.M.push(M);H.m.push(mi.s);H.start.push(start);H.done.push(done);H.A.push(mi.A);H.B.push(mi.B);
+    M=nM;mi=r.nx;cyc++;
+    $('#mmsg').innerHTML=msg;
+    if(M==='FIN')stop();
+    draw();
+  }
+  function draw(){
+    let s='<defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+    s+='<text x="8" y="18" class="dim" style="font-size:12.5px">major FSM</text>';
+    MS.forEach((k,i)=>{const x=40+i*90,on=k===M;
+      if(i<5)s+='<path d="M'+(x+26)+',58 H'+(x+62)+'" class="thin" marker-end="url(#ah2)"/>';
+      if(k==='W1'||k==='W2')s+='<path d="M'+(x-10)+',34 C'+(x-14)+',4 '+(x+14)+',4 '+(x+10)+',34" class="thin" marker-end="url(#ah2)"/><text x="'+(x+24)+'" y="16" class="m dim" style="font-size:10.5px">!done</text>';
+      s+='<circle cx="'+x+'" cy="58" r="25" class="box" style="'+(on?'fill:var(--accent-soft);stroke:var(--accent);stroke-width:3':'')+'"/><text x="'+x+'" y="63" text-anchor="middle" class="m" style="font-size:12.5px;font-weight:'+(on?600:400)+'">'+k+'</text>';});
+    s+='<line x1="8" y1="100" x2="552" y2="100" style="stroke:var(--rule)"/>';
+    s+='<text x="8" y="120" class="dim" style="font-size:12.5px">minor FSM (GCD)</text>';
+    s+='<g transform="translate(0,110) scale(0.75)">'+stateDiagram(mi.s,8,20).replace(/id="ah"/,'id="ah3"').replace(/url\(#ah\)/g,'url(#ah3)')+'</g>';
+    const sg=M==='S1'||M==='S2'?1:0,dn=mi.s==='DONE'?1:0;
+    const row=(y,k,val,hot)=>'<text x="300" y="'+y+'" class="m dim" style="font-size:12px">'+k+'</text><text x="380" y="'+y+'" class="m" style="font-size:13px;'+(hot?'fill:var(--accent);font-weight:600':'')+'">'+val+'</text>';
+    s+=row(138,'start',sg,sg)+row(160,'done',dn,dn)+row(182,'minor A, B',mi.A+', '+mi.B)+row(204,'g1',g1===null?'—':g1)+row(226,'결과',res===null?'—':res,res!==null);
+    $('#msvg').innerHTML=s;
+    $('#mcyc').textContent='진행한 사이클: '+cyc;
+    const n=H.M.length;if(!n){$('#mwave').innerHTML='';return;}
+    const k0=Math.max(0,n-22),sl=a=>a.slice(k0);
+    $('#mwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'major',t:'v',v:sl(H.M)},{n:'minor',t:'v',v:sl(H.m)},{n:'start',t:'b',v:sl(H.start)},{n:'done',t:'b',v:sl(H.done),col:'var(--p3)'},{n:'A',t:'v',v:sl(H.A)},{n:'B',t:'v',v:sl(H.B)}],{cycles:n-k0,cw:44,lw:52,axis0:k0});
+  }
+  $('#mclk').onclick=clk;$('#mrst').onclick=reset;
+  $('#mauto').onclick=()=>{if(timer){stop();return;}$('#mauto').textContent='멈춤';timer=setInterval(clk,550);};
+  reset();
+})();
+
+(()=>{ // 실험 3-4
+  let k='bin';const R=10,C=8;
+  segBind('en_k',v=>{k=v;draw();});onInput('en_d',draw);onInput('en_n',drawN);
+  function draw(){
+    const dd=+$('#en_d').value;$('#en_dv').textContent=dd?(dd>0?'s1':'s0')+' +'+fx(Math.abs(dd)/R,1):'0';
+    const code=k==='bin'?[0,1,2,3]:[0,1,3,2],d1=Math.max(0,dd),d0=Math.max(0,-dd);
+    const s1=[],s0=[],zc=[],zr=[];let gl=0;
+    for(let t=0;t<C*R;t++){const c=Math.floor(t/R),p=t%R,cur=code[c%4],old=code[(c+3)%4];
+      const b1=c>0&&p<d1?(old>>1)&1:(cur>>1)&1,b0=c>0&&p<d0?old&1:cur&1;
+      s1.push(b1);s0.push(b0);const z=(b1*2+b0)===code[3]?1:0;zc.push(z);zr.push(c%4===3?1:0);}
+    for(let t=1;t<C*R;t++)if(zc[t]&&!zr[t]&&!zc[t-1])gl++;
+    $('#enwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'s1',t:'b',v:s1},{n:'s0',t:'b',v:s0},{n:'z 조합',t:'b',v:zc,col:'var(--bad)'},{n:'z 레지스터',t:'b',v:zr,col:'var(--ok)'}],{cycles:C,res:R,cw:54,lw:76});
+    const m=$('#enmsg');
+    if(gl){m.className='msg bad';m.innerHTML='조합 출력 z에 글리치가 '+gl+'번 생겼습니다. 상태 비트가 동시에 바뀌지 않아, 잠깐 S3('+code[3].toString(2).padStart(2,'0')+')처럼 보이는 순간이 있습니다.';}
+    else if(k==='gray'){m.className='msg ok';m.innerHTML='gray 번호에서는 이웃 상태끼리 한 비트만 바뀌므로, 비트가 어긋나도 엉뚱한 상태를 거치지 않습니다.';}
+    else{m.className='msg';m.innerHTML='지금은 글리치가 없습니다. 비트 사이 지연 차이를 바꿔 보세요. 실제 칩에서 두 비트의 지연을 똑같이 맞출 수는 없습니다.';}
+  }
+  function drawN(){const N=+$('#en_n').value;$('#en_nv').textContent=N+'개';const b=Math.ceil(Math.log2(N));
+    $('#enstats').innerHTML=[['binary',b+'개'],['gray',b+'개'],['one-hot',N+'개']].map(([x,v])=>'<div class="stat"><span class="k">'+x+' 플립플롭</span><span class="v">'+v+'</span></div>').join('')+'<div class="stat"><span class="k">one-hot 다음 상태 논리</span><span class="v" style="font-size:15px">이전 상태 몇 개만 봄</span></div>';}
+  draw();drawN();
+})();
+
+(()=>{ // 실험 3-5
+  const BASE=['// 데이터패스','always @(posedge clk) begin','  if (ld_a) A <= sel ? (A - B) : a_in;','  if (ld_b) B <= sel ? (B - A) : b_in;','end','assign eq = (A == B);','assign gt = (A > B);','','// 컨트롤러 (조합)','always @(*) begin','  next = state; ld_a = 0; ld_b = 0; sel = 0; done = 0;','  case (state)','    IDLE: if (start) begin ld_a = 1; ld_b = 1; next = CALC; end','    CALC: if (eq)      next = DONE;','          else if (gt) begin ld_a = 1; sel = 1; end','          else         begin ld_b = 1; sel = 1; end','    DONE: done = 1;','  endcase','end'];
+  const BUG={1:{i:6,t:'assign gt = (A < B);'},2:{i:10,t:'  next = state; ld_a = 0; sel = 0; done = 0;'},3:{i:3,t:'  if (ld_b) B <= sel ? (A - B) : b_in;'}};
+  const Q={
+    1:{q:'어느 줄이 틀렸을까요?',o:['<code>if (ld_a) A &lt;= sel ? (A - B) : a_in;</code>','<code>assign gt = (A &lt; B);</code>','<code>CALC: if (eq) next = DONE;</code>','<code>DONE: done = 1;</code>'],a:1,e:'맞습니다. 비교가 뒤집혀서 큰 쪽에서 작은 쪽을 빼야 할 때 반대로 뺍니다. 8비트에서 음수가 되면 큰 수로 감기므로(예: 18−48 → 226) 파형의 A, B 값이 튀는 것이 단서입니다.'},
+    2:{q:'어느 줄이 틀렸을까요?',o:['<code>assign eq = (A == B);</code>','<code>next = state; ld_a = 0; sel = 0; done = 0;</code>','<code>IDLE: if (start) begin ... end</code>'],a:1,e:'맞습니다. ld_b의 기본값이 빠져서, 한번 1이 되면 대입되지 않는 경로에서 값을 기억합니다(래치). 파형에서 ld_b가 처음 이후로 계속 1인 것이 단서입니다.'},
+    3:{q:'어느 줄이 틀렸을까요?',o:['<code>assign gt = (A &gt; B);</code>','<code>if (ld_b) B &lt;= sel ? (A - B) : b_in;</code>','<code>else begin ld_b = 1; sel = 1; end</code>'],a:1,e:'맞습니다. 위 줄을 복사해 오다 B − A를 A − B로 남겨 둔 버그입니다. A가 B보다 작아지는 순간 처음으로 B가 갱신되며 값이 깨지는 것이 단서입니다.'}};
+  let bug=1;
+  function sim(bug){
+    let s='IDLE',A=0,B=0,pl=0;const H={st:[],A:[],B:[],ld_a:[],ld_b:[],done:[]};
+    for(let c=0;c<14;c++){
+      const start=c===0?1:0,eq=A===B,gt=bug===1?A<B:A>B;let nx=s,la=0,lb=bug===2?pl:0,sel=0,dn=0;
+      if(s==='IDLE'){if(start){la=1;lb=1;nx='CALC';}}else if(s==='CALC'){if(eq)nx='DONE';else if(gt){la=1;sel=1;}else{lb=1;sel=1;}}else dn=1;
+      H.st.push(s);H.A.push(A);H.B.push(B);H.ld_a.push(la);H.ld_b.push(lb);H.done.push(dn);
+      const nA=la?(sel?(A-B)&255:48):A,nB=lb?(sel?((bug===3?A-B:B-A)&255):18):B;A=nA;B=nB;s=nx;pl=lb;}
+    return H;
+  }
+  function draw(){
+    const H=sim(bug);
+    $('#bugwave').innerHTML=wave([{n:'clk',t:'clk'},{n:'state',t:'v',v:H.st},{n:'A',t:'v',v:H.A},{n:'B',t:'v',v:H.B},{n:'ld_a',t:'b',v:H.ld_a},{n:'ld_b',t:'b',v:H.ld_b},{n:'done',t:'b',v:H.done,col:'var(--p3)'}],{cycles:14,cw:42,lw:52});
+    const L=BASE.slice();L[BUG[bug].i]=BUG[bug].t;$('#bugcode').innerHTML=codeLines(L.join('\n'));
+    const host=document.createElement('div');$('#bugq').replaceChildren(host);quiz(host,[Q[bug]]);
+  }
+  segBind('bug_k',v=>{bug=+v;draw();});draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'GCD 컨트롤러가 CALC 상태에서 gt 값에 따라 ld_a 또는 ld_b를 올립니다. 이 출력은?',o:['Moore 출력','Mealy 출력','출력이 아니라 상태'],a:1,e:'맞습니다. 출력이 현재 상태뿐 아니라 입력(여기서는 데이터패스의 상태 신호 gt)에도 의존하므로 Mealy 출력입니다.'},
+  {q:'<code>always @(*)</code> 컨트롤러에서 어떤 case 분기에 <code>ld_a</code> 대입을 빠뜨리면?',o:['ld_a는 자동으로 0이 된다','합성기가 래치를 만든다','컴파일 오류가 난다'],a:1,e:'맞습니다. 대입하지 않으면 이전 값을 기억해야 하므로 래치가 생깁니다. 기본값을 맨 위에 적어 두면 막을 수 있습니다.'},
+  {q:'major/minor로 나누었을 때 얻는 것과 잃는 것으로 알맞은 것은?',o:['FSM이 단순해지고 재사용할 수 있지만, start/done 핸드셰이크에 사이클이 든다','상태 수가 늘어 회로가 커지지만 속도가 빨라진다','차이가 없다'],a:0,e:'맞습니다. 함수 호출처럼 모듈화의 이점을 얻는 대신, 일을 주고받는 데 몇 사이클이 더 듭니다.'},
+  {q:'상태가 12개인 FSM을 one-hot으로 만들면 플립플롭은 몇 개가 필요한가요?',o:['4개','12개','24개'],a:1,e:'맞습니다. 상태마다 하나씩 12개입니다. binary라면 4개면 되지만 다음 상태 논리가 복잡해집니다.'},
+  {q:'다른 클럭 도메인으로 나가는 FSM 출력을 만들 때 가장 안전한 방법은?',o:['상태를 해석하는 조합 논리로 바로 낸다','레지스터를 거쳐서 낸다','출력에 버퍼를 하나 단다'],a:1,e:'맞습니다. 조합 출력은 상태 비트가 바뀌는 순간 글리치가 생길 수 있고, 받는 쪽이 그 글리치를 잡을 수 있습니다.'},
+  {q:'self-checking 테스트벤치에서 정답 모델의 역할은?',o:['DUT에 클럭을 넣는다','같은 입력에 대한 기대 결과를 만들어 DUT 출력과 비교하게 한다','합성 결과를 만든다'],a:1,e:'맞습니다. 정답 모델은 보통 회로보다 쉽게 쓸 수 있는 방식(여기서는 while 루프)으로 같은 계산을 합니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch02-timing.html"><span>이전</span>2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a><a class="nx" href="ch04-pipeline.html"><span>다음</span>4장. 파이프라이닝</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li class="on">3장. FSMD: 컨트롤러와 데이터패스</li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

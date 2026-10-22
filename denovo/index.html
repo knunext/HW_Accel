@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03070a">
+<title>de novo 조립 101: 자르고, 세고, 한 붓에 잇는다 — de novo 유전체 조립 인터랙티브 실습</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Noto+Serif+KR:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F1F5F4; --panel: #FFFFFF; --field: #E5ECEB;
+  --grid: rgba(16,52,58,.07); --grid2: rgba(16,52,58,.16);
+  --ink: #10262B; --ink2: #3E5960; --ink3: #7A9298; --line: rgba(16,38,43,.13);
+  --accent: #6A43D6; --accentSoft: rgba(106,67,214,.14); --onAccent: #FFFFFF;
+  --A: #179A5A; --C: #2C6BDB; --G: #D48B0A; --T: #D63B3B;
+  --ok: #179A5A; --bad: #D63B3B; --warn: #D48B0A;
+  --dpu: #6A43D6; --dpuSoft: rgba(106,67,214,.10); --ssd: #0E7C86; --ssdSoft: rgba(14,124,134,.12);
+  --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --display: "Archivo", "IBM Plex Sans KR", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0B1B1E; --panel: #10252A; --field: #163238;
+    --grid: rgba(214,236,238,.055); --grid2: rgba(214,236,238,.12);
+    --ink: #DAEDEF; --ink2: #A2C0C5; --ink3: #6B8E94; --line: rgba(214,236,238,.14);
+    --accent: #A58CFF; --accentSoft: rgba(165,140,255,.20); --onAccent: #0B1B1E;
+    --A: #3FD08A; --C: #6AA4FF; --G: #FFC34A; --T: #FF6E6E;
+    --ok: #3FD08A; --bad: #FF6E6E; --warn: #FFC34A;
+    --dpu: #A58CFF; --dpuSoft: rgba(165,140,255,.13); --ssd: #48C9D3; --ssdSoft: rgba(72,201,211,.14);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0B1B1E; --panel: #10252A; --field: #163238;
+  --grid: rgba(214,236,238,.055); --grid2: rgba(214,236,238,.12);
+  --ink: #DAEDEF; --ink2: #A2C0C5; --ink3: #6B8E94; --line: rgba(214,236,238,.14);
+  --accent: #A58CFF; --accentSoft: rgba(165,140,255,.20); --onAccent: #0B1B1E;
+  --A: #3FD08A; --C: #6AA4FF; --G: #FFC34A; --T: #FF6E6E;
+  --ok: #3FD08A; --bad: #FF6E6E; --warn: #FFC34A;
+  --dpu: #A58CFF; --dpuSoft: rgba(165,140,255,.13); --ssd: #48C9D3; --ssdSoft: rgba(72,201,211,.14);
+}
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.75;
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a { color: inherit; }
+code, .mono { font-family: var(--mono); font-size: .92em; }
+.prose code { background: var(--field); padding: 0 4px; border-radius: 4px; color: var(--ink); }
+
+/* ---------- nav ---------- */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px max(20px, env(safe-area-inset-left, 0px));
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.nav-brand { font-family: var(--display); font-weight: 800; font-stretch: 120%; font-variation-settings: "wdth" 120; font-size: 15px; white-space: nowrap; text-decoration: none; display: inline-flex; gap: 8px; align-items: center; }
+.nav-brand svg { flex: none; }
+.nav ol { list-style: none; display: flex; gap: 2px; margin: 0 0 0 auto; padding: 0; overflow-x: auto; scrollbar-width: none; }
+.nav ol::-webkit-scrollbar { display: none; }
+.nav a.ch { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 4px 9px; border-radius: 99px; font-size: 13px; color: var(--ink2); white-space: nowrap; }
+.nav a.ch:hover { color: var(--ink); background: var(--panel); }
+.nav a.ch.on { color: var(--ink); background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.nav a.ch b { font-family: var(--display); font-weight: 700; color: var(--accent); }
+.nav .part { width: 1px; background: var(--line); margin: 4px 6px; flex: none; }
+@media (max-width: 1360px) { .nav a.ch span { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { max-width: 1120px; margin: 0 auto; padding: 52px 24px 20px; display: grid; grid-template-columns: 1fr 1.08fr; gap: 40px; align-items: center; }
+.hero h1 {
+  font-family: var(--display); font-weight: 820; font-stretch: 125%; font-variation-settings: "wdth" 125;
+  font-size: clamp(32px, 4.8vw, 56px); line-height: 1.07; letter-spacing: -0.015em; margin: 0 0 18px;
+}
+.hero h1 small { display: block; font-size: .46em; font-weight: 700; font-stretch: 105%; font-variation-settings: "wdth" 105; color: var(--ink2); margin-top: 12px; letter-spacing: 0; line-height: 1.3; }
+.hero p { color: var(--ink2); font-size: 17px; max-width: 46ch; margin: 0 0 18px; }
+.hero p b { color: var(--ink); font-weight: 600; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; color: var(--ink2); margin-bottom: 8px; }
+.legend-row i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.hero-fig { position: relative; }
+.hero-canvas { width: 100%; aspect-ratio: 4 / 3; display: block; border-radius: 14px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.hero-cap { font-size: 13px; color: var(--ink3); margin-top: 8px; min-height: 1.6em; }
+.hero-cap b { color: var(--ink); font-weight: 600; }
+
+.map { max-width: 1120px; margin: 8px auto 0; padding: 0 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.map div { padding: 14px 16px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); font-size: 14px; color: var(--ink2); line-height: 1.6; }
+.map b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+.map a { text-decoration: none; color: var(--accent); font-weight: 600; font-size: 13.5px; }
+
+/* ---------- part & chapter ---------- */
+.part-head { max-width: 1120px; margin: 0 auto; padding: 88px 24px 0; }
+.part-head h2 { font-family: var(--display); font-weight: 800; font-stretch: 118%; font-variation-settings: "wdth" 118; font-size: clamp(26px, 3.4vw, 38px); margin: 0 0 8px; line-height: 1.15; }
+.part-head p { color: var(--ink2); max-width: 66ch; margin: 0; }
+.part-head .tag { display: inline-block; font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+
+.chapter { max-width: 1120px; margin: 0 auto; padding: 64px 24px 24px; }
+.ch-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+.ch-num {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid var(--accent); color: var(--accent); font-family: var(--display); font-weight: 800; font-size: 16px;
+  transform: translateY(-4px);
+}
+.chapter h2 { font-family: var(--display); font-weight: 760; font-stretch: 112%; font-variation-settings: "wdth" 112; font-size: clamp(23px, 3vw, 32px); line-height: 1.22; margin: 0; }
+.used { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 18px 48px; font-size: 12.5px; color: var(--ink3); }
+.used b { font-weight: 600; color: var(--ink2); margin-right: 2px; }
+.used span { padding: 1px 8px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink2); }
+.prose { max-width: 66ch; color: var(--ink2); margin: 0 0 22px 48px; }
+.prose p { margin: 0 0 12px; }
+.prose b { color: var(--ink); font-weight: 600; }
+.prose h3 { font-size: 16.5px; color: var(--ink); margin: 26px 0 6px; font-weight: 600; }
+
+/* equations */
+.eqs { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin: 0 0 22px 48px; max-width: 980px; }
+.eq { background: var(--panel); border-radius: 12px; box-shadow: 0 0 0 1px var(--line); padding: 12px 16px 14px; }
+.eq-h { font-size: 13px; color: var(--ink2); font-weight: 600; }
+.eq-m { font-family: "Times New Roman", "Noto Serif", serif; font-size: 22px; color: var(--ink); margin: 6px 0 6px; white-space: nowrap; overflow-x: auto; line-height: 1.5; }
+.eq-m i { font-style: italic; }
+.eq-m sup, .eq-m sub { font-size: .62em; }
+.eq-m .fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: .86em; line-height: 1.15; margin: 0 2px; }
+.eq-m .fr > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px 1px; }
+.eq p { margin: 0; font-size: 13.5px; color: var(--ink2); line-height: 1.6; }
+.eq p b { color: var(--ink); font-weight: 600; }
+
+/* lab */
+.lab { background: var(--panel); border-radius: 14px; box-shadow: 0 0 0 1px var(--line); padding: 18px; }
+.lab + .lab, .lab + .codebox, .codebox + .lab { margin-top: 18px; }
+.lab-h { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+.lab .sub { margin: 0 0 14px; font-size: 14px; color: var(--ink2); max-width: 74ch; }
+.lab .sub b { color: var(--ink); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 14px; }
+.controls.top { margin: 0 0 12px; }
+.controls .sep { flex-basis: 100%; height: 0; }
+.readout { margin-top: 12px; font-size: 14px; color: var(--ink2); min-height: 1.75em; line-height: 1.65; }
+.readout b { color: var(--ink); font-weight: 600; }
+.ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; } .warn { color: var(--warn); font-weight: 600; }
+.view-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--ink2); margin-bottom: 6px; flex-wrap: wrap; }
+.view-cap b { color: var(--ink); font-weight: 600; }
+canvas.cv { width: 100%; display: block; border-radius: 8px; background: var(--paper); }
+svg.sv { width: 100%; display: block; border-radius: 8px; background: var(--paper); }
+.split { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; align-items: start; }
+.split.even { grid-template-columns: 1fr 1fr; }
+.split.side { grid-template-columns: 1fr 300px; }
+.split.lead { grid-template-columns: 290px 1fr; }
+.split > * { min-width: 0; }
+
+.btn { border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-weight: 600; font-size: 14px; background: var(--accent); color: var(--onAccent); }
+.btn:hover { filter: brightness(1.06); }
+.btn.line { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); font-weight: 500; }
+.btn.line:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+.btn.play { min-width: 84px; }
+.slider { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink2); }
+.slider output { min-width: 46px; color: var(--ink); font-weight: 600; text-align: right; white-space: nowrap; }
+.slider input { width: 130px; accent-color: var(--accent); }
+.check { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink2); cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.seg { display: inline-flex; flex-wrap: wrap; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 7px 12px; cursor: pointer; font-weight: 600; font-size: 13.5px; color: var(--ink2); }
+.seg button + button { box-shadow: inset 1px 0 0 var(--line); }
+.seg button[aria-checked="true"] { background: var(--ink); color: var(--panel); }
+.field-label { font-size: 13.5px; color: var(--ink2); display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; flex-wrap: wrap; }
+input.txt { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; font-family: var(--mono); font-size: 14px; width: min(100%, 300px); text-transform: uppercase; }
+
+.after { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 0 48px; }
+.try h3, .key h3 { font-size: 14px; margin: 0 0 8px; color: var(--ink); font-weight: 600; }
+.try ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.try li { position: relative; padding-left: 22px; font-size: 14.5px; color: var(--ink2); line-height: 1.65; }
+.try li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 10px; height: 10px; border: 1.5px solid var(--ink3); border-radius: 2px; }
+.key p { margin: 0; padding-left: 14px; border-left: 3px solid var(--accent); font-size: 15px; color: var(--ink); line-height: 1.65; }
+
+/* code */
+.codebox { margin: 18px 0 0; background: var(--panel); border-radius: 14px; box-shadow: 0 0 0 1px var(--line); padding: 14px 0 6px; }
+.codebox .code-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 13px; font-weight: 600; color: var(--ink); padding: 0 16px 8px; }
+.codebox .code-h span { font-weight: 400; color: var(--ink3); }
+.code { font-family: var(--mono); font-size: 12.8px; line-height: 1.62; overflow-x: auto; color: var(--ink2); padding: 4px 0 10px; }
+.code .ln { padding: 0 14px 0 0; white-space: pre; border-left: 3px solid transparent; min-height: 1.62em; display: flex; }
+.code .ln .no { flex: none; width: 34px; text-align: right; padding-right: 12px; color: var(--ink3); opacity: .6; user-select: none; -webkit-user-select: none; }
+.code .ln.on { background: var(--accentSoft); border-left-color: var(--accent); color: var(--ink); }
+.code .kw { color: var(--accent); font-weight: 500; }
+.code .st { color: var(--A); }
+.code .cm { color: var(--ink3); font-style: italic; }
+.code .nu { color: var(--G); }
+.code .fn { color: var(--ink); font-weight: 600; }
+.code .bi { color: var(--C); }
+.code-note { font-size: 13.5px; color: var(--ink2); line-height: 1.65; padding: 6px 16px 10px; border-top: 1px solid var(--line); }
+.code-note b { color: var(--ink); font-weight: 600; }
+.code-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 16px 8px; }
+.code-tabs button { border: 0; border-radius: 6px; padding: 4px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; background: transparent; color: var(--ink2); box-shadow: inset 0 0 0 1px var(--line); }
+.code-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--panel); box-shadow: none; }
+
+/* DNA */
+.dna { font-family: var(--mono); font-size: 15px; letter-spacing: .04em; line-height: 1.9; word-break: break-all; }
+.dna .A, .bA { color: var(--A); } .dna .C, .bC { color: var(--C); } .dna .G, .bG { color: var(--G); } .dna .T, .bT { color: var(--T); }
+.dna .win { background: var(--accentSoft); border-radius: 3px; box-shadow: inset 0 -2px 0 var(--accent); }
+.dna .dim { opacity: .35; }
+.kchips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; font-family: var(--mono); font-size: 13px; }
+.kchips > span { padding: 1px 6px; border-radius: 4px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); }
+.kchips > span.new { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.kchips > span sup { color: var(--accent); font-weight: 700; margin-left: 2px; }
+
+.fastq { font-family: var(--mono); font-size: 12.5px; line-height: 1.8; background: var(--paper); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--ink2); }
+.fastq .q { cursor: pointer; border-radius: 2px; }
+.fastq .q:hover, .fastq .q.sel { background: var(--accentSoft); color: var(--ink); }
+.fastq .lbl { color: var(--ink3); }
+
+.phases { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: ph; }
+.phases li { counter-increment: ph; display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: start; padding: 7px 8px; border-radius: 8px; font-size: 13.5px; color: var(--ink3); line-height: 1.45; cursor: pointer; }
+.phases li::before { content: counter(ph); width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--ink3); font-size: 11px; font-weight: 700; margin-top: 1px; }
+.phases li b { display: block; color: var(--ink2); font-weight: 600; }
+.phases li em { font-style: normal; font-size: 12px; color: var(--ink3); white-space: nowrap; }
+.phases li.done::before { border-color: var(--ok); color: var(--ok); }
+.phases li.on { background: var(--accentSoft); color: var(--ink); }
+.phases li.on::before { border-color: var(--accent); background: var(--accent); color: var(--onAccent); }
+.phases li.on b { color: var(--ink); }
+
+.counters { display: grid; gap: 4px; margin-top: 12px; font-size: 13px; color: var(--ink3); }
+.counters > div { display: flex; justify-content: space-between; gap: 10px; }
+.counters > div.kchips { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 5px; }
+.counters b { color: var(--ink); font-weight: 600; }
+.side-note { margin-top: 12px; font-size: 13px; color: var(--ink); line-height: 1.6; padding: 10px; border-radius: 8px; background: var(--paper); min-height: 4.4em; }
+.side-note b { font-weight: 600; }
+
+.cmp-wrap { overflow-x: auto; margin-top: 12px; }
+.cmp { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.cmp th { text-align: left; font-weight: 600; color: var(--ink2); font-size: 12.5px; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.cmp td { padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--ink2); white-space: nowrap; }
+.cmp td:first-child { color: var(--ink); font-weight: 600; }
+.cmp td.num, .cmp th.num { text-align: right; }
+.cmp td.num { color: var(--ink); }
+.cmp tr.sel td { background: var(--accentSoft); }
+.cmp tbody tr { cursor: pointer; }
+
+.genomes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.genomes button { text-align: left; border: 0; border-radius: 10px; padding: 9px 11px; cursor: pointer; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink2); font-size: 12.5px; line-height: 1.45; }
+.genomes button b { display: block; color: var(--ink); font-size: 14px; font-weight: 600; }
+.genomes button i { font-style: italic; }
+.genomes button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accentSoft); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink2); margin-top: 8px; }
+.legend i { display: inline-block; width: 14px; height: 8px; border-radius: 2px; vertical-align: 0; margin-right: 6px; }
+
+.hwnote { margin: 0 0 22px 48px; max-width: 980px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.hwnote div { padding: 12px 14px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); font-size: 13.5px; color: var(--ink2); line-height: 1.55; }
+.hwnote b { display: block; color: var(--ink); font-size: 14.5px; font-weight: 600; margin-bottom: 2px; font-family: var(--display); font-stretch: 108%; font-variation-settings: "wdth" 108; }
+.src { font-size: 12.5px; color: var(--ink3); margin: 8px 0 0 48px; max-width: 980px; line-height: 1.6; }
+.src a { color: var(--ink2); }
+
+.closing { max-width: 1120px; margin: 0 auto; padding: 80px 24px 96px; }
+.closing h2 { font-family: var(--display); font-weight: 760; font-stretch: 112%; font-variation-settings: "wdth" 112; font-size: 30px; margin: 0 0 16px; }
+.closing ol { max-width: 72ch; color: var(--ink2); padding-left: 22px; margin: 0 0 20px; }
+.closing ol li { margin-bottom: 10px; }
+.closing ol b { color: var(--ink); font-weight: 600; }
+.closing p { max-width: 66ch; color: var(--ink2); }
+.foot { font-size: 12.5px; color: var(--ink3); border-top: 1px solid var(--line); padding-top: 18px; margin-top: 36px; line-height: 1.7; }
+
+@media (max-width: 1000px) {
+  .split, .split.even, .split.side, .split.lead { grid-template-columns: 1fr; }
+  .map { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; padding-top: 28px; gap: 22px; }
+  .prose, .after, .used, .eqs, .hwnote, .src { margin-left: 0; }
+  .after { grid-template-columns: 1fr; }
+  .lab { padding: 12px; }
+  .slider input { width: 110px; }
+  .chapter { padding-top: 52px; }
+  .part-head { padding-top: 64px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- 시리즈: 부 머리, 장 카드, 이전/다음, 메인 ---------- */
+.nav a.part-link { display: inline-flex; align-items: center; text-decoration: none; padding: 4px 10px; border-radius: 99px; font-size: 13px; color: var(--ink2); white-space: nowrap; box-shadow: inset 0 0 0 1px var(--line); }
+.nav a.part-link:hover { color: var(--ink); background: var(--panel); }
+.nav a.part-link.here { background: var(--ink); color: var(--panel); box-shadow: none; }
+.part-top { max-width: 1120px; margin: 0 auto; padding: 44px 24px 4px; }
+.part-top .crumb { font-size: 13px; color: var(--ink3); margin-bottom: 10px; }
+.part-top .crumb a { color: var(--ink2); }
+.part-top h1 { font-family: var(--display); font-weight: 820; font-stretch: 122%; font-variation-settings: "wdth" 122; font-size: clamp(30px, 4.4vw, 50px); line-height: 1.1; margin: 0 0 12px; }
+.part-top h1 small { display: block; font-size: .38em; color: var(--accent); font-weight: 700; letter-spacing: .02em; margin-bottom: 6px; }
+.part-top p { color: var(--ink2); max-width: 70ch; margin: 0 0 18px; font-size: 16.5px; }
+.chap-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 8px; }
+.chap-cards a { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; text-decoration: none; padding: 12px 14px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); color: var(--ink2); font-size: 13.5px; line-height: 1.5; }
+.chap-cards a:hover { box-shadow: 0 0 0 1.5px var(--accent); }
+.chap-cards a .ch-num { transform: none; width: 30px; height: 30px; font-size: 14px; }
+.chap-cards a b { display: block; color: var(--ink); font-size: 14.5px; font-weight: 600; margin-bottom: 2px; }
+.part-next { max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.part-next a { text-decoration: none; padding: 16px 18px; border-radius: 12px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); color: var(--ink2); font-size: 14px; }
+.part-next a b { display: block; color: var(--ink); font-size: 17px; font-family: var(--display); font-stretch: 110%; font-variation-settings: "wdth" 110; margin-top: 2px; }
+.part-next a.nx { text-align: right; }
+.part-next a:hover { box-shadow: 0 0 0 1.5px var(--accent); }
+.part-next .foot { grid-column: 1 / -1; }
+.sec { max-width: 1120px; margin: 0 auto; padding: 56px 24px 8px; }
+.sec > h2 { font-family: var(--display); font-weight: 780; font-stretch: 115%; font-variation-settings: "wdth" 115; font-size: clamp(24px, 3vw, 32px); margin: 0 0 8px; }
+.sec > p.lead { color: var(--ink2); max-width: 70ch; margin: 0 0 18px; }
+.parts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pcard { background: var(--panel); border-radius: 14px; box-shadow: 0 0 0 1px var(--line); padding: 18px 20px 16px; display: flex; flex-direction: column; border-top: 5px solid var(--accent); }
+.pcard .tag { font-size: 13px; font-weight: 700; color: var(--accent); }
+.pcard h3 { font-family: var(--display); font-weight: 760; font-stretch: 112%; font-variation-settings: "wdth" 112; font-size: 22px; margin: 2px 0 6px; }
+.pcard p { color: var(--ink2); font-size: 14.5px; margin: 0 0 10px; line-height: 1.6; }
+.pcard ol { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
+.pcard ol a { display: flex; gap: 10px; align-items: baseline; text-decoration: none; color: var(--ink2); font-size: 14px; padding: 3px 0; }
+.pcard ol a:hover { color: var(--ink); }
+.pcard ol a span.n { font-family: var(--display); font-weight: 700; color: var(--accent); min-width: 22px; }
+.pcard .go { margin-top: auto; align-self: flex-start; text-decoration: none; }
+.paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.path { background: var(--panel); border-radius: 12px; box-shadow: 0 0 0 1px var(--line); padding: 14px 16px; }
+.path b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
+.path p { margin: 0 0 10px; font-size: 13.5px; color: var(--ink2); line-height: 1.55; }
+.path .steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.path .steps a { text-decoration: none; padding: 2px 9px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); background: var(--paper); }
+.path .steps a:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.path .steps i { font-style: normal; color: var(--ink3); }
+.files { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.files div { background: var(--panel); border-radius: 10px; box-shadow: 0 0 0 1px var(--line); padding: 10px 14px; font-size: 13.5px; color: var(--ink2); line-height: 1.55; }
+.files div b { display: block; font-family: var(--mono); color: var(--ink); font-size: 13px; font-weight: 500; }
+@media (max-width: 860px) { .parts, .paths { grid-template-columns: 1fr; } .part-next { grid-template-columns: 1fr; } .part-next a.nx { text-align: left; } }
+
+/* ---------- 메인 표지 ---------- */
+body.cvpage { --serif: "Fraunces", "Noto Serif KR", Georgia, serif; --kserif: "Noto Serif KR", "Nanum Myeongjo", serif; }
+.cover { position: relative; height: min(100svh, 1000px); min-height: 660px; background: #03070a; color: #eaf3f5; overflow: hidden; cursor: crosshair; }
+.cover canvas#cover { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cover-shade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(2,6,9,.84) 0%, rgba(2,6,9,.58) 36%, rgba(2,6,9,0) 68%), linear-gradient(0deg, rgba(2,6,9,.9) 0%, rgba(2,6,9,0) 34%), linear-gradient(180deg, rgba(2,6,9,.7) 0%, rgba(2,6,9,0) 22%); }
+.cover-inner { position: relative; height: 100%; max-width: 1240px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 16px) 28px calc(env(safe-area-inset-bottom, 0px) + 18px);
+  display: grid; grid-template-rows: auto auto 1fr auto auto; pointer-events: none; }
+.cover-inner a, .cover-inner nav { pointer-events: auto; }
+.cv-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: 12.5px; letter-spacing: .12em; color: rgba(234,243,245,.78); }
+.cv-top nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.cv-top a { color: rgba(234,243,245,.82); text-decoration: none; padding: 4px 9px; border-radius: 99px; letter-spacing: .04em; }
+.cv-top a:hover { background: rgba(234,243,245,.12); color: #fff; }
+.cv-mast { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; border-bottom: 1px solid rgba(234,243,245,.36); padding-bottom: 12px; margin-top: 6px; }
+.cv-title { font-family: var(--serif); font-style: italic; font-weight: 560; font-size: clamp(76px, 13.5vw, 196px); line-height: .8; letter-spacing: -0.035em; font-variation-settings: "opsz" 144, "SOFT" 50; color: #f4fbfc; text-shadow: 0 4px 40px rgba(0,0,0,.35); }
+.cv-issue { text-align: right; font-size: 12.5px; line-height: 1.65; letter-spacing: .08em; color: rgba(234,243,245,.78); padding-bottom: 8px; white-space: nowrap; }
+.cv-issue b { display: block; font-family: var(--kserif); font-size: 15px; letter-spacing: .02em; color: #f4fbfc; font-weight: 700; }
+.cv-head { align-self: center; max-width: 590px; padding: 26px 0; }
+.cv-kicker { margin: 0; font-size: 12.5px; letter-spacing: .28em; color: #a6f0cf; font-weight: 600; }
+.cover h1 { font-family: var(--kserif); font-weight: 800; font-size: clamp(36px, 5.4vw, 68px); line-height: 1.12; letter-spacing: -0.025em; margin: 10px 0 16px; color: #f6fcfd; text-shadow: 0 2px 30px rgba(0,0,0,.55); }
+.cv-deck { margin: 0 0 20px; font-size: 16.5px; line-height: 1.75; color: rgba(234,243,245,.86); max-width: 46ch; }
+.cv-cta { display: inline-flex; gap: 8px; align-items: center; text-decoration: none; font-size: 14px; font-weight: 600; color: #03070a; background: #eaf3f5; padding: 9px 16px; border-radius: 99px; }
+.cv-cta:hover { background: #fff; }
+.cv-lines { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; border-top: 1px solid rgba(234,243,245,.3); padding-top: 14px; }
+.cv-lines a { text-decoration: none; color: inherit; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: baseline; }
+.cv-lines a .n { font-family: var(--serif); font-style: italic; font-size: 30px; line-height: 1; color: #a6f0cf; grid-row: span 2; }
+.cv-lines a b { font-family: var(--kserif); font-size: 16px; font-weight: 700; color: #f4fbfc; }
+.cv-lines a span.d { font-size: 12.5px; line-height: 1.5; color: rgba(234,243,245,.7); }
+.cv-lines a:hover b { text-decoration: underline; text-underline-offset: 3px; }
+.cv-cap { margin: 14px 0 0; font-size: 11.5px; line-height: 1.6; color: rgba(234,243,245,.58); text-align: right; }
+.cv-cap b { color: rgba(234,243,245,.9); }
+.cv-cap .mono { font-size: 12px; letter-spacing: .06em; }
+/* 차례와 본문 */
+.jr { max-width: 1120px; margin: 0 auto; padding: 72px 28px 8px; }
+.jr .kick { font-size: 12px; letter-spacing: .26em; color: var(--accent); font-weight: 700; }
+.jr > h2 { font-family: var(--display); font-weight: 780; font-stretch: 115%; font-variation-settings: "wdth" 115; font-size: clamp(26px, 3.2vw, 36px); margin: 6px 0 10px; line-height: 1.2; }
+.jr > p.lead { color: var(--ink2); max-width: 68ch; margin: 0 0 22px; font-size: 16px; }
+.toc-part { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1.25fr); gap: 28px; padding: 26px 0; border-top: 1px solid var(--line); }
+.toc-part:last-child { border-bottom: 1px solid var(--line); }
+.toc-num { font-family: var(--display); font-weight: 800; font-stretch: 120%; font-variation-settings: "wdth" 120; font-size: 64px; line-height: .9; color: var(--accent); }
+.toc-part h3 { font-family: var(--display); font-weight: 760; font-stretch: 112%; font-variation-settings: "wdth" 112; font-size: 23px; margin: 2px 0 8px; line-height: 1.25; }
+.toc-part h3 a { text-decoration: none; }
+.toc-part h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.toc-part p { margin: 0 0 12px; font-size: 14.5px; color: var(--ink2); line-height: 1.65; }
+.toc-part .open { font-size: 13.5px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.toc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.toc-list a { display: flex; gap: 10px; align-items: baseline; text-decoration: none; color: var(--ink); font-size: 14.5px; padding: 7px 0; line-height: 1.45; }
+.toc-list a .t { font-weight: 600; font-size: 15px; }
+.toc-list a .dots { flex: 1; border-bottom: 1px dotted var(--ink3); opacity: .6; transform: translateY(-4px); min-width: 16px; }
+.toc-list a .no { font-family: var(--display); font-weight: 700; color: var(--accent); min-width: 2ch; text-align: right; font-size: 15px; }
+.toc-list a:hover .t { color: var(--accent); }
+.toc-list a small { display: block; font-size: 13.5px; color: var(--ink2); font-weight: 400; line-height: 1.5; margin-top: 1px; }
+body.cvpage .closing { padding-top: 48px; }
+@media (max-width: 860px) {
+  .cover { height: auto; min-height: 100svh; }
+  .cover-shade { background: linear-gradient(180deg, rgba(2,6,9,.75) 0%, rgba(2,6,9,.35) 40%, rgba(2,6,9,.9) 100%); }
+  .cover-inner { padding-left: 18px; padding-right: 18px; }
+  .cv-mast { flex-direction: column; align-items: flex-start; }
+  .cv-issue { text-align: left; padding-bottom: 0; }
+  .cv-lines { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .cv-cap { text-align: left; }
+  .toc-part { grid-template-columns: 52px minmax(0, 1fr); gap: 14px 18px; }
+  .toc-part .toc-list { grid-column: 1 / -1; }
+  .toc-num { font-size: 52px; }
+  .jr { padding-left: 18px; padding-right: 18px; }
+}
+
+</style>
+</head>
+<body class="cvpage">
+<header class="cover" id="top">
+<canvas id="cover" aria-hidden="true"></canvas><div class="cover-shade"></div>
+<div class="cover-inner">
+  <div class="cv-top"><a href="../index.html" style="padding-left:0">← NCSL 인터랙티브 학습자료</a><nav aria-label="부"><a href="part1-fragments.html">1부</a><a href="part2-python.html">2부</a><a href="part3-accelerators.html">3부</a><a href="part4-research.html">4부</a><a href="https://claude.ai/artifact/EE24Z6E1qYGxMvBWPDGo9o" target="_blank" rel="noopener">안내서</a></nav></div>
+  <div class="cv-mast"><span class="cv-title">de novo</span><div class="cv-issue"><b>유전체 조립 101</b>2026년 10월 · 4부 18장<br>인터랙티브 실습과 파이썬 코드</div></div>
+  <div class="cv-head"><p class="cv-kicker">조각에서 유전체로, 그리고 가속기로</p><h1>자르고, 세고,<br>한 붓에 잇는다</h1>
+    <p class="cv-deck">참조 서열 없이 짧은 리드만으로 유전체를 다시 짓는 법을 손으로 해 보고, 파이썬으로 짓고, PIM·FPGA·GPU로 빠르게 만들고, 진짜 데이터로 연구를 시작하기까지.</p>
+    <a class="cv-cta" href="#toc">차례 보기 ↓</a></div>
+  <div class="cv-lines"><a href="part1-fragments.html"><span class="n">1</span><b>조각에서 유전체로</b><span class="d">리드와 커버리지 · OLC · de Bruijn 그래프 · 오일러 경로 · 세 가지 함정</span></a><a href="part2-python.html"><span class="n">2</span><b>파이썬으로 짓는 조립기</b><span class="d">미니 조립기 · 대장균 실측 · k-mer 세기</span></a><a href="part3-accelerators.html"><span class="n">3</span><b>우리 장비로 빠르게</b><span class="d">UPMEM · x86 PIM · U50 HBM · SmartSSD · 하나로 잇기 · 네 장치 조립</span></a><a href="part4-research.html"><span class="n">4</span><b>실습에서 연구로</b><span class="d">진짜 리드 · 평가 · 제대로 재기 · 연구 질문</span></a></div>
+  <p class="cv-cap">표지 · phiX174 리드를 읽는 패턴 플로셀을 흉내 낸 그림. 사이클 <b id="cvCycle">12</b> · 초점 아래 클러스터가 지금까지 읽은 염기 <span id="cvRead" class="mono"></span><br>포인터를 움직이면 초점이 따라오고, 화면을 누르면 다음 사이클로 넘어갑니다.</p>
+</div></header><section class="jr" id="toc"><span class="kick">차례</span><h2>네 부, 18장</h2><p class="lead">부마다 한 페이지입니다. 장 번호는 네 부에 걸쳐 이어지니, 본문에서 '9장'이라고 하면 3부의 UPMEM 장이에요. 장마다 설명, 파이썬 코드, 인터랙티브 실습, '해 볼 것'과 '핵심'이 있습니다.</p><div class="toc-part"><div class="toc-num">1</div><div><h3><a href="part1-fragments.html">조각에서 유전체로</a></h3><p>짧은 조각을 잇는 두 가지 생각, 겹침(OLC)과 k-mer(de Bruijn)를 작은 예로 손에 익히고, 실제 데이터가 왜 까다로운지 봅니다.</p><a class="open" href="part1-fragments.html">1부 열기 →</a></div><ol class="toc-list"><li><a href="part1-fragments.html#ch1"><span class="t">리드와 커버리지<small>샷건 시퀀싱, 커버리지와 빈틈, 실제 FASTQ의 품질 글자</small></span><span class="dots"></span><span class="no">1</span></a></li><li><a href="part1-fragments.html#ch2"><span class="t">OLC<small>겹침 그래프와 탐욕 조립, 반복에서 틀리는 순간</small></span><span class="dots"></span><span class="no">2</span></a></li><li><a href="part1-fragments.html#ch3"><span class="t">de Bruijn 그래프<small>k-mer로 자르고 같은 노드를 합치기</small></span><span class="dots"></span><span class="no">3</span></a></li><li><a href="part1-fragments.html#ch4"><span class="t">오일러 경로<small>Hierholzer를 파이썬 코드 줄과 함께 한 단계씩</small></span><span class="dots"></span><span class="no">4</span></a></li><li><a href="part1-fragments.html#ch5"><span class="t">세 가지 함정<small>역상보, 오류와 k-mer 스펙트럼, 반복과 k</small></span><span class="dots"></span><span class="no">5</span></a></li></ol></div><div class="toc-part"><div class="toc-num">2</div><div><h3><a href="part2-python.html">파이썬으로 짓는 조립기</a></h3><p>200줄짜리 조립기를 한 단계씩 돌리고, 실제 유전체 다섯 개로 시간과 메모리를 잰 뒤, 가장 무거운 k-mer 세기를 빠르게 만드는 방법을 비교합니다.</p><a class="open" href="part2-python.html">2부 열기 →</a></div><ol class="toc-list"><li><a href="part2-python.html#ch6"><span class="t">미니 조립기<small>200줄 파이썬 조립기를 브라우저에서 phiX174로</small></span><span class="dots"></span><span class="no">6</span></a></li><li><a href="part2-python.html#ch7"><span class="t">대장균 실측<small>실제 유전체 다섯 개의 시간과 메모리, k 비교</small></span><span class="dots"></span><span class="no">7</span></a></li><li><a href="part2-python.html#ch8"><span class="t">k-mer 세기<small>2비트로 굴리기, 해시, 기수 정렬, 나누기와 C++ 실측</small></span><span class="dots"></span><span class="no">8</span></a></li></ol></div><div class="toc-part"><div class="toc-num">3</div><div><h3><a href="part3-accelerators.html">우리 장비로 빠르게</a></h3><p>UPMEM PIM, 적층 메모리 위의 x86 PIM, FPGA 근데이터 처리(U50 HBM, SmartSSD)로 세기와 줄이기를 옮기고, SmartSSD·U50·GPU·CPU로 조립 전체를 짭니다.</p><a class="open" href="part3-accelerators.html">3부 열기 →</a></div><ol class="toc-list"><li><a href="part3-accelerators.html#ch9"><span class="t">UPMEM<small>DPU 256개로 나누기와 쏠림, 해시 대 정렬</small></span><span class="dots"></span><span class="no">9</span></a></li><li><a href="part3-accelerators.html#ch10"><span class="t">x86 PIM<small>적층 메모리 볼트 코어, 메시지와 일 넘기기</small></span><span class="dots"></span><span class="no">10</span></a></li><li><a href="part3-accelerators.html#ch11"><span class="t">U50 HBM<small>의사 채널마다 세기 엔진, 메모리 해저드와 포워딩</small></span><span class="dots"></span><span class="no">11</span></a></li><li><a href="part3-accelerators.html#ch12"><span class="t">SmartSSD<small>저장장치 안에서 2비트·슈퍼-k-mer로 줄이기</small></span><span class="dots"></span><span class="no">12</span></a></li><li><a href="part3-accelerators.html#ch13"><span class="t">하나로 잇기<small>세기·걷기 엔진을 바꿔 가며 병목 찾기</small></span><span class="dots"></span><span class="no">13</span></a></li><li><a href="part3-accelerators.html#ch14"><span class="t">네 장치 조립<small>구역 단위로 SmartSSD·U50·GPU·CPU 잇기</small></span><span class="dots"></span><span class="no">14</span></a></li></ol></div><div class="toc-part"><div class="toc-num">4</div><div><h3><a href="part4-research.html">실습에서 연구로</a></h3><p>진짜 리드와 두 벌 유전체, N50 너머의 평가, 반복·루프라인·기준선으로 제대로 재기, 그리고 장마다 하나의 연구 질문.</p><a class="open" href="part4-research.html">4부 열기 →</a></div><ol class="toc-list"><li><a href="part4-research.html#ch15"><span class="t">진짜 리드<small>어댑터, 품질, GC 쏠림, 두 벌 유전체와 버블</small></span><span class="dots"></span><span class="no">15</span></a></li><li><a href="part4-research.html#ch16"><span class="t">평가<small>NGA50, 오조립, 짝 리드 스캐폴딩</small></span><span class="dots"></span><span class="no">16</span></a></li><li><a href="part4-research.html#ch17"><span class="t">제대로 재기<small>반복 측정, 루프라인, 공정한 기준선</small></span><span class="dots"></span><span class="no">17</span></a></li><li><a href="part4-research.html#ch18"><span class="t">연구 질문<small>장마다 하나의 질문과 시작 프로젝트</small></span><span class="dots"></span><span class="no">18</span></a></li></ol></div></section><section class="jr" id="paths"><span class="kick">읽는 길</span><h2>배경에 따라 다르게</h2><p class="lead">장을 누르면 그 장이 있는 부 페이지가 열립니다.</p><div class="paths"><div class="path"><b>신입생, 처음부터</b><p>원리 → 파이썬 → 진짜 데이터와 평가 → 장비 → 질문 고르기 순서입니다. 4주 로드맵과 맞춰 읽으세요.</p><div class="steps"><a href="part1-fragments.html#ch1">1 리드와 커버리지</a><a href="part1-fragments.html#ch3">3 de Bruijn 그래프</a><a href="part1-fragments.html#ch4">4 오일러 경로</a><a href="part1-fragments.html#ch5">5 세 가지 함정</a><i>→</i><a href="part2-python.html#ch6">6 미니 조립기</a><a href="part2-python.html#ch7">7 대장균 실측</a><a href="part2-python.html#ch8">8 k-mer 세기</a><i>→</i><a href="part4-research.html#ch15">15 진짜 리드</a><a href="part4-research.html#ch16">16 평가</a><a href="part4-research.html#ch17">17 제대로 재기</a><i>→</i><a href="part3-accelerators.html#ch9">9 UPMEM</a><a href="part3-accelerators.html#ch11">11 U50 HBM</a><a href="part3-accelerators.html#ch14">14 네 장치 조립</a><i>→</i><a href="part4-research.html#ch18">18 연구 질문</a></div></div><div class="path"><b>하드웨어 배경</b><p>생물학은 꼭 필요한 만큼만 보고 가속 설계로 바로 갑니다.</p><div class="steps"><a href="part1-fragments.html#ch1">1 리드와 커버리지</a><a href="part1-fragments.html#ch3">3 de Bruijn 그래프</a><a href="part1-fragments.html#ch5">5 세 가지 함정</a><i>→</i><a href="part2-python.html#ch8">8 k-mer 세기</a><i>→</i><a href="part3-accelerators.html#ch9">9 UPMEM</a><a href="part3-accelerators.html#ch10">10 x86 PIM</a><a href="part3-accelerators.html#ch11">11 U50 HBM</a><a href="part3-accelerators.html#ch12">12 SmartSSD</a><a href="part3-accelerators.html#ch13">13 하나로 잇기</a><a href="part3-accelerators.html#ch14">14 네 장치 조립</a><i>→</i><a href="part4-research.html#ch17">17 제대로 재기</a><a href="part4-research.html#ch18">18 연구 질문</a></div></div><div class="path"><b>생물정보 배경</b><p>조립 원리는 아는 사람용입니다. 측정과 장비, 평가 쪽으로 갑니다.</p><div class="steps"><a href="part2-python.html#ch6">6 미니 조립기</a><a href="part2-python.html#ch7">7 대장균 실측</a><a href="part2-python.html#ch8">8 k-mer 세기</a><i>→</i><a href="part3-accelerators.html#ch9">9 UPMEM</a><a href="part3-accelerators.html#ch11">11 U50 HBM</a><a href="part3-accelerators.html#ch12">12 SmartSSD</a><a href="part3-accelerators.html#ch14">14 네 장치 조립</a><i>→</i><a href="part4-research.html#ch16">16 평가</a><a href="part4-research.html#ch17">17 제대로 재기</a><a href="part4-research.html#ch18">18 연구 질문</a></div></div></div></section><section class="jr" id="facts"><span class="kick">실측</span><h2>실제로 잰 숫자</h2><p class="lead">본문의 숫자 중 실제로 잰 것만 모았습니다. 모두 1코어·4 GB 컨테이너에서 쟀고, 우리 서버에서 다시 재야 할 값입니다. 9–14장 시간 모델의 장치 속도는 가정값이라 넣지 않았어요.</p><div class="cmp-wrap"><table class="cmp"><thead><tr><th>무엇을</th><th>결과</th><th>장</th></tr></thead><tbody><tr><td>대장균 536, 30×, 파이썬 조립 (k = 31)</td><td>콘티그 1,221개, N50 31,116 bp, 오조립 0</td><td><a href="part2-python.html#ch7">7장</a> · <a href="part4-research.html#ch16">16장</a></td></tr><tr><td>같은 리드, k = 55</td><td>콘티그 575개, N50 78,400 bp (k = 71에서 69,503로 다시 떨어짐)</td><td><a href="part2-python.html#ch7">7장</a></td></tr><tr><td>파이썬 k-mer 세기 (대장균 30×)</td><td>82초, k-mer 하나에 0.69 µs, 최대 메모리 1.09 GB</td><td><a href="part2-python.html#ch7">7장</a></td></tr><tr><td>같은 2,400만 k-mer를 C++ 1코어로</td><td>해시 표 0.67초, 기수 정렬 0.86초, 64구역 해시 0.31초 (파이썬 15.7초)</td><td><a href="part2-python.html#ch8">8장</a> · <a href="part4-research.html#ch17">17장</a></td></tr><tr><td>DPU 256개로 나눌 때 가장 바쁜 DPU</td><td>앞 4글자 3.91배, k-mer 해시 1.02배, 미니마이저 1.17배 (평균 대비)</td><td><a href="part3-accelerators.html#ch9">9장</a></td></tr><tr><td>대장균 30×를 무엇으로 보내나</td><td>FASTQ 323 MB, 2비트 37.5 MB, 슈퍼-k-mer 152 MB, k-mer 8바이트씩 948 MB</td><td><a href="part3-accelerators.html#ch12">12장</a></td></tr><tr><td>앞뒤 (k−1)-mer로 구역 나누기</td><td>부피 ×1.094, 구역별 압축 결과가 전역 압축과 k-mer 하나까지 같음</td><td><a href="part3-accelerators.html#ch14">14장</a></td></tr><tr><td>두 벌 phiX174 (SNP 0.5%, 40×)</td><td>버블 터뜨리기 전 콘티그 23개·N50 350 bp → 후 1개·5,363 bp</td><td><a href="part4-research.html#ch15">15장</a></td></tr></tbody></table></div></section><section class="jr" id="code"><span class="kick">코드</span><h2>함께 드리는 파일</h2><p class="lead">본문의 코드 상자는 모두 이 파일에서 그대로 가져왔습니다. 파이썬 파일과 count_bench.cpp, kmer_pim.cpp는 결과까지 확인했고, UPMEM과 HLS 코드는 실제 툴로 돌려 보지 않은 스케치예요.</p><div class="files"><div><b><a href="code/mini_assembler.py" download>mini_assembler.py</a></b>6–7장 조립기 전체: 흉내, 세기, 거르기, 유니티그, 팁, N50</div><div><b><a href="code/lessons.py" download>lessons.py</a></b>2–5장 작은 함수, 9장 DPU 나누기 흉내, 12장 슈퍼-k-mer</div><div><b><a href="code/kmer_count.py" download>kmer_count.py</a></b>8장 2비트 굴리기, 정렬·기수 정렬·나누기 세기, 유전체 크기 어림</div><div><b><a href="code/count_bench.cpp" download>count_bench.cpp</a></b>8장 C++ 세기 벤치마크 (해시, std::sort, 기수 정렬, 64구역)</div><div><b><a href="code/bucket_compact.py" download>bucket_compact.py</a></b>14장 구역별 압축과 union-find 잇기, 전역 판과 대조</div><div><b><a href="code/realdata.py" download>realdata.py</a></b>15장 진짜 리드 흉내, 품질·어댑터 자르기, 버블 터뜨리기</div><div><b><a href="code/evaluate.py" download>evaluate.py</a></b>16장 참조에 맞추기, NGA50과 오조립</div><div><b><a href="code/host.c" download>host.c</a> · <a href="code/kmer_dpu.c" download>kmer_dpu.c</a></b>9장 UPMEM 호스트·DPU 스케치 (미검증)</div><div><b><a href="code/kmer_pim.cpp" download>kmer_pim.cpp</a></b>10장 Sniper용 x86 PIM 흉내 (일반 실행으로 정답 확인)</div><div><b><a href="code/count_pe.cpp" download>count_pe.cpp</a></b>11장 U50 세기 엔진 HLS 스케치 (미검증)</div><div><b><a href="code/kmer_kernel.cpp" download>kmer_kernel.cpp</a></b>12장 SmartSSD 줄이기 커널 HLS 스케치 (미검증)</div></div></section><section class="jr" id="research"><span class="kick">연구로</span><h2>연구로 들어가기</h2><p class="lead">장마다 자라는 연구 질문은 <a href="part4-research.html#ch18">18장의 지도</a>에, 서버·명령·측정 표·시작 프로젝트 카드와 4주 로드맵은 <a href="https://claude.ai/artifact/EE24Z6E1qYGxMvBWPDGo9o" target="_blank" rel="noopener">연구 진입 안내서</a>에 있습니다. 안내서는 함께 고치는 문서라 연구실에서 직접 채워 가면 됩니다.</p></section><section class="closing"><div class="foot">
+    데이터: phiX174 (Galaxy test-data), 사람 미토콘드리아 (minimap2 test), SARS-CoV-2 MT192765.1과 FASTQ ERR5069949 (nf-core/test-datasets), λ 파지 NC_001416.1 (Bowtie2 example), 대장균 536 NC_008253.1 (Bowtie example).<br>
+    참고: Lander &amp; Waterman (1988) Genomics · Idury &amp; Waterman (1995) J. Comput. Biol. · Pevzner, Tang &amp; Waterman (2001) PNAS · Gómez-Luna 외, PrIM (IEEE Access 2022, arXiv:2105.03814) · Angizi 외, PIM-Assembler (DAC 2020), PANDA (arXiv:2008.06177) · Lavenier 외, Mapping on UPMEM (HAL hal-01327511) · Mansouri Ghiasi 외, GenStore (ASPLOS 2022) · Ahn 외, Tesseract (ISCA 2015) · Carlson 외, Sniper (SC 2011) · Marçais &amp; Kingsford, Jellyfish (Bioinformatics 2011) · Rizk 외, DSK (Bioinformatics 2013) · Kokot 외, KMC 3 (Bioinformatics 2017) · Melsted &amp; Pritchard, BFCounter (BMC Bioinformatics 2011) · Pandey 외, Squeakr (Bioinformatics 2018) · Chikhi 외, BCALM 2 (Bioinformatics 2016) · Chen 외, fastp (Bioinformatics 2018) · Gurevich 외, QUAST (Bioinformatics 2013) · Vurture 외, GenomeScope (Bioinformatics 2017) · Williams 외, Roofline (CACM 2009) · Samsung/Xilinx SmartSSD CSD 제품 자료 · AMD Alveo U50 자료(UG1371, DS965, UG1393).<br>
+    경북대학교 컴퓨터학부 NCSL · 코드: mini_assembler.py, lessons.py, kmer_count.py, count_bench.cpp, bucket_compact.py, realdata.py, evaluate.py, host.c, kmer_dpu.c, kmer_pim.cpp, count_pe.cpp, kmer_kernel.cpp
+  </div></section>
+<script>
+const DATA_PHIX = "GAGTTTTATCGCTTCCATGACGCAGAAGTTAACACTTTCGGATATTTCTGATGAGTCGAAAAATTATCTTGATAAAGCAGGAATTACTACTGCTTGTTTACGAATTAAATCGAAGTGGACTGCTGGCGGAAAATGAGAAAATTCGACCTATCCTTGCGCAGCTCGAGAAGCTCTTACTTTGCGACCTTTCGCCATCAACTAACGATTCTGTCAAAAACTGACGCGTTGGATGAGGAGAAGTGGCTTAATATGCTTGGCACGTTCGTCAAGGACTGGTTTAGATATGAGTCACATTTTGTTCATGGTAGAGATTCTCTTGTTGACATTTTAAAAGAGCGTGGATTACTATCTGAGTCCGATGCTGTTCAACCACTAATAGGTAAGAAATCATGAGTCAAGTTACTGAACAATCCGTACGTTTCCAGACCGCTTTGGCCTCTATTAAGCTCATTCAGGCTTCTGCCGTTTTGGATTTAACCGAAGATGATTTCGATTTTCTGACGAGTAACAAAGTTTGGATTGCTACTGACCGCTCTCGTGCTCGTCGCTGCGTTGAGGCTTGCGTTTATGGTACGCTGGACTTTGTGGGATACCCTCGCTTTCCTGCTCCTGTTGAGTTTATTGCTGCCGTCATTGCTTATTATGTTCATCCCGTCAACATTCAAACGGCCTGTCTCATCATGGAAGGCGCTGAATTTACGGAAAACATTATTAATGGCGTCGAGCGTCCGGTTAAAGCCGCTGAATTGTTCGCGTTTACCTTGCGTGTACGCGCAGGAAACACTGACGTTCTTACTGACGCAGAAGAAAACGTGCGTCAAAAATTACGTGCAGAAGGAGTGATGTAATGTCTAAAGGTAAAAAACGTTCTGGCGCTCGCCCTGGTCGTCCGCAGCCGTTGCGAGGTACTAAAGGCAAGCGTAAAGGCGCTCGTCTTTGGTATGTAGGTGGTCAACAATTTTAATTGCAGGGGCTTCGGCCCCTTACTTGAGGATAAATTATGTCTAATATTCAAACTGGCGCCGAGCGTATGCCGCATGACCTTTCCCATCTTGGCTTCCTTGCTGGTCAGATTGGTCGTCTTATTACCATTTCAACTACTCCGGTTATCGCTGGCGACTCCTTCGAGATGGACGCCGTTGGCGCTCTCCGTCTTTCTCCATTGCGTCGTGGCCTTGCTATTGACTCTACTGTAGACATTTTTACTTTTTATGTCCCTCATCGTCACGTTTATGGTGAACAGTGGATTAAGTTCATGAAGGATGGTGTTAATGCCACTCCTCTCCCGACTGTTAACACTACTGGTTATATTGACCATGCCGCTTTTCTTGGCACGATTAACCCTGATACCAATAAAATCCCTAAGCATTTGTTTCAGGGTTATTTGAATATCTATAACAACTATTTTAAAGCGCCGTGGATGCCTGACCGTACCGAGGCTAACCCTAATGAGCTTAATCAAGATGATGCTCGTTATGGTTTCCGTTGCTGCCATCTCAAAAACATTTGGACTGCTCCGCTTCCTCCTGAGACTGAGCTTTCTCGCCAAATGACGACTTCTACCACATCTATTGACATTATGGGTCTGCAAGCTGCTTATGCTAATTTGCATACTGACCAAGAACGTGATTACTTCATGCAGCGTTACCGTGATGTTATTTCTTCATTTGGAGGTAAAACCTCTTATGACGCTGACAACCGTCCTTTACTTGTCATGCGCTCTAATCTCTGGGCATCTGGCTATGATGTTGATGGAACTGACCAAACGTCGTTAGGCCAGTTTTCTGGTCGTGTTCAACAGACCTATAAACATTCTGTGCCGCGTTTCTTTGTTCCTGAGCATGGCACTATGTTTACTCTTGCGCTTGTTCGTTTTCCGCCTACTGCGACTAAAGAGATTCAGTACCTTAACGCTAAAGGTGCTTTGACTTATACCGATATTGCTGGCGACCCTGTTTTGTATGGCAACTTGCCGCCGCGTGAAATTTCTATGAAGGATGTTTTCCGTTCTGGTGATTCGTCTAAGAAGTTTAAGATTGCTGAGGGTCAGTGGTATCGTTATGCGCCTTCGTATGTTTCTCCTGCTTATCACCTTCTTGAAGGCTTCCCATTCATTCAGGAACCGCCTTCTGGTGATTTGCAAGAACGCGTACTTATTCGCCACCATGATTATGACCAGTGTTTCCAGTCCGTTCAGTTGTTGCAGTGGAATAGTCAGGTTAAATTTAATGTGACCGTTTATCGCAATCTGCCGACCACTCGCGATTCAATCATGACTTCGTGATAAAAGATTGAGTGTGAGGTTATAACGCCGAAGCGGTAAAAATTTTAATTTTTGCCGCTGAGGGGTTGACCAAGCGAAGCGCGGTAGGTTTTCTGCTTAGGAGTTTAATCATGTTTCAGACTTTTATTTCTCGCCATAATTCAAACTTTTTTTCTGATAAGCTGGTTCTCACTTCTGTTACTCCAGCTTCTTCGGCACCTGTTTTACAGACACCTAAAGCTACATCGTCAACGTTATATTTTGATAGTTTGACGGTTAATGCTGGTAATGGTGGTTTTCTTCATTGCATTCAGATGGATACATCTGTCAACGCCGCTAATCAGGTTGTTTCTGTTGGTGCTGATATTGCTTTTGATGCCGACCCTAAATTTTTTGCCTGTTTGGTTCGCTTTGAGTCTTCTTCGGTTCCGACTACCCTCCCGACTGCCTATGATGTTTATCCTTTGAATGGTCGCCATGATGGTGGTTATTATACCGTCAAGGACTGTGTGACTATTGACGTCCTTCCCCGTACGCCGGGCAATAATGTTTATGTTGGTTTCATGGTTTGGTCTAACTTTACCGCTACTAAATGCCGCGGATTGGTTTCGCTGAATCAGGTTATTAAAGAGATTATTTGTCTCCAGCCACTTAAGTGAGGTGATTTATGTTTGGTGCTATTGCTGGCGGTATTGCTTCTGCTCTTGCTGGTGGCGCCATGTCTAAATTGTTTGGAGGCGGTCAAAAAGCCGCCTCCGGTGGCATTCAAGGTGATGTGCTTGCTACCGATAACAATACTGTAGGCATGGGTGATGCTGGTATTAAATCTGCCATTCAAGGCTCTAATGTTCCTAACCCTGATGAGGCCGCCCCTAGTTTTGTTTCTGGTGCTATGGCTAAAGCTGGTAAAGGACTTCTTGAAGGTACGTTGCAGGCTGGCACTTCTGCCGTTTCTGATAAGTTGCTTGATTTGGTTGGACTTGGTGGCAAGTCTGCCGCTGATAAAGGAAAGGATACTCGTGATTATCTTGCTGCTGCATTTCCTGAGCTTAATGCTTGGGAGCGTGCTGGTGCTGATGCTTCCTCTGCTGGTATGGTTGACGCCGGATTTGAGAATCAAAAAGAGCTTACTAAAATGCAACTGGACAATCAGAAAGAGATTGCCGAGATGCAAAATGAGACTCAAAAAGAGATTGCTGGCATTCAGTCGGCGACTTCACGCCAGAATACGAAAGACCAGGTATATGCACAAAATGAGATGCTTGCTTATCAACAGAAGGAGTCTACTGCTCGCGTTGCGTCTATTATGGAAAACACCAATCTTTCCAAGCAACAGCAGGTTTCCGAGATTATGCGCCAAATGCTTACTCAAGCTCAAACGGCTGGTCAGTATTTTACCAATGACCAAATCAAAGAAATGACTCGCAAGGTTAGTGCTGAGGTTGACTTAGTTCATCAGCAAACGCAGAATCAGCGGTATGGCTCTTCTCATATTGGCGCTACTGCAAAGGATATTTCTAATGTCGTCACTGATGCTGCTTCTGGTGTGGTTGATATTTTTCATGGTATTGATAAAGCTGTTGCCGATACTTGGAACAATTTCTGGAAAGACGGTAAAGCTGATGGTATTGGCTCTAATTTGTCTAGGAAATAACCGTCAGGATTGACACCCTCCCAATTGTATGTTTTCATGCCTCCAAATCTTGGAGGCTTTTTTATGGTTCGTTCTTATTACCCTTCTGAATGTCACGCTGATTATTTTGACTTTGAGCGTATCGAGGCTCTTAAACCTGCTATTGAGGCTTGTGGCATTTCTACTCTTTCTCAATCCCCAATGCTTGGCTTCCATAAGCAGATGGATAACCGCATCAAGCTCTTGGAAGAGATTCTGTCTTTTCGTATGCAGGGCGTTGAGTTCGATAATGGTGATATGTATGTTGACGGCCATAAGGCTGCTTCTGACGTTCGTGATGAGTTTGTATCTGTTACTGAGAAGTTAATGGATGAATTGGCACAATGCTACAATGTGCTCCCCCAACTTGATATTAATAACACTATAGACCACCGCCCCGAAGGGGACGAAAAATGGTTTTTAGAGAACGAGAAGACGGTTACGCAGTTTTGCCGCAAGCTGGCTGCTGAACGCCCTCTTAAGGATATTCGCGATGAGTATAATTACCCCAAAAAGAAAGGTATTAAGGATGAGTGTTCAAGATTGCTGGAGGCCTCCACTATGAAATCGCGTAGAGGCTTTACTATTCAGCGTTTGATGAATGCAATGCGACAGGCTCATGCTGATGGTTGGTTTATCGTTTTTGACACTCTCACGTTGGCTGACGACCGATTAGAGGCGTTTTATGATAATCCCAATGCTTTGCGTGACTATTTTCGTGATATTGGTCGTATGGTTCTTGCTGCCGAGGGTCGCAAGGCTAATGATTCACACGCCGACTGCTATCAGTATTTTTGTGTGCCTGAGTATGGTACAGCTAATGGCCGTCTTCATTTCCATGCGGTGCATTTTATGCGGACACTTCCTACAGGTAGCGTTGACCCTAATTTTGGTCGTCGGGTACGCAATCGCCGCCAGTTAAATAGCTTGCAAAATACGTGGCCTTATGGTTACAGTATGCCCATCGCAGTTCGCTACACGCAGGACGCTTTTTCACGTTCTGGTTGGTTGTGGCCTGTTGATGCTAAAGGTGAGCCGCTTAAAGCTACCAGTTATATGGCTGTTGGTTTCTATGTGGCTAAATACGTTAACAAAAAGTCAGATATGGACCTTGCTGCTAAAGGTCTAGGAGCTAAAGAATGGAACAACTCACTAAAAACCAAGCTGTCGCTACTTCCCAAGAAGCTGTTCAGAATCAGAATGAGCCGCAACTTCGGGATGAAAATGCTCACAATGACAAATCTGTCCACGGAGTGCTTAATCCAACTTACCAAGCTGGGTTACGACGCGACGCCGTTCAACCAGATATTGAAGCAGAACGCAAAAAGAGAGATGAGATTGAGGCTGGGAAAAGTTACTGTAGCCGACGTTTTGGCGGCGCAACCTGTGACGACAAATCTGCTCAAATTTATGCGCGCTTCGATAAAAATGATTGGCGTATCCAACCTGCA";
+/* ============================================================ 표지: 패턴 플로셀 */
+(function () {
+  const cv = document.getElementById("cover"); if (!cv) return;
+  const ctx = cv.getContext("2d");
+  const capCycle = document.getElementById("cvCycle"), capRead = document.getElementById("cvRead");
+  const COL = { A: [64, 240, 150], C: [86, 170, 255], G: [255, 206, 84], T: [255, 96, 96] };
+  const REV = { A: "T", C: "G", G: "C", T: "A" };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W = 0, H = 0, dpr = 1, sites = [], sprites = {}, bg = null, grain = null, cycle = 0, pulseT = 0, raf = 0, visible = true, dirty = true;
+  const focus = { x: 0.64, y: 0.48 }, aim = { x: 0.64, y: 0.48 };
+  let seed = 20261021; const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const LEVELS = 5;
+  function sprite(rgb, lv) {
+    const core = 2.4 + lv * 1.7, R = core * 3.2 + 2, s = Math.ceil(R * 2 * dpr), c = document.createElement("canvas"); c.width = c.height = s;
+    const g = c.getContext("2d"), m = s / 2, peak = 1 / (1 + lv * 0.55);
+    const gr = g.createRadialGradient(m, m, 0, m, m, R * dpr), [r, gg, b] = rgb;
+    gr.addColorStop(0, `rgba(${Math.min(255, r + 120)},${Math.min(255, gg + 120)},${Math.min(255, b + 120)},${peak})`);
+    gr.addColorStop(0.18, `rgba(${r},${gg},${b},${0.85 * peak})`);
+    gr.addColorStop(0.42, `rgba(${r},${gg},${b},${0.28 * peak})`);
+    gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+    g.fillStyle = gr; g.fillRect(0, 0, s, s);
+    return { c, s: s / dpr };
+  }
+  function build() {
+    W = cv.clientWidth; H = cv.clientHeight; dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    sprites = {}; for (const b in COL) { sprites[b] = []; for (let lv = 0; lv < LEVELS; lv++) sprites[b].push(sprite(COL[b], lv)); }
+    const sp = W < 620 ? 15 : 18, rowH = sp * 0.866, G = DATA_PHIX.length; sites = []; seed = 20261021;
+    for (let j = -2; j * rowH < H + sp * 2; j++) for (let i = -2; i * sp < W + sp * 2; i++) {
+      if (rnd() > 0.74) continue;
+      const st = Math.floor(rnd() * G), rev = rnd() < 0.5; let read = "";
+      for (let k = 0; k < 160; k++) { const ch = DATA_PHIX[(st + k) % G]; read += rev ? REV[DATA_PHIX[(st + G - k) % G]] : ch; }
+      sites.push({ x: i * sp + (j & 1 ? sp / 2 : 0) + (rnd() - 0.5) * 1.2, y: j * rowH + (rnd() - 0.5) * 1.2, read, b: 0.45 + rnd() * 0.55, ph: rnd() * 6.28 });
+    }
+    // 배경: 어두운 유리, 우물 격자, 비네트
+    bg = document.createElement("canvas"); bg.width = cv.width; bg.height = cv.height; const g = bg.getContext("2d"); g.scale(dpr, dpr);
+    const base = g.createLinearGradient(0, 0, W, H); base.addColorStop(0, "#04090d"); base.addColorStop(0.55, "#061017"); base.addColorStop(1, "#02060a"); g.fillStyle = base; g.fillRect(0, 0, W, H);
+    g.fillStyle = "rgba(120,190,210,0.045)";
+    for (let j = -2; j * rowH < H + sp * 2; j++) for (let i = -2; i * sp < W + sp * 2; i++) { g.beginPath(); g.arc(i * sp + (j & 1 ? sp / 2 : 0), j * rowH, sp * 0.22, 0, 6.283); g.fill(); }
+    // 그레인
+    grain = document.createElement("canvas"); grain.width = 160; grain.height = 160; const gg = grain.getContext("2d"), im = gg.createImageData(160, 160);
+    for (let p = 0; p < im.data.length; p += 4) { const v = Math.floor(rnd() * 255); im.data[p] = im.data[p + 1] = im.data[p + 2] = v; im.data[p + 3] = 18; }
+    gg.putImageData(im, 0, 0);
+    dirty = true;
+  }
+  let last = 0;
+  function draw(now) {
+    raf = 0; if (!visible) return;
+    if (now - last < 30) { raf = requestAnimationFrame(draw); return; }
+    last = now;
+    focus.x += (aim.x - focus.x) * 0.12; focus.y += (aim.y - focus.y) * 0.12;
+    const moving = Math.abs(aim.x - focus.x) + Math.abs(aim.y - focus.y) > 0.001;
+    const since = (now - pulseT) / 1000, pulsing = since < 0.8;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bg, 0, 0); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = "lighter";
+    const fx = focus.x * W, fy = focus.y * H, px = (focus.x - 0.5) * 10, py = (focus.y - 0.5) * 8, env = 0.62 + 0.38 * Math.exp(-since * 2.6);
+    let near = null, nd = 1e9;
+    for (const s of sites) {
+      const dy = (s.y - fy) / H, dx = (s.x - fx) / W, d = Math.sqrt(dy * dy * 1.6 + dx * dx * 0.35);
+      const lv = Math.min(LEVELS - 1, Math.floor(d * 7.5)), sp = sprites[s.read[cycle % 150]][lv], k = lv / (LEVELS - 1);
+      const x = s.x + px * k, y = s.y + py * k;
+      ctx.globalAlpha = Math.min(1, s.b * env * (1.08 - 0.3 * k) * (0.92 + 0.08 * Math.sin(s.ph + cycle)));
+      ctx.drawImage(sp.c, x - sp.s / 2, y - sp.s / 2, sp.s, sp.s);
+      const q = (s.x - fx) ** 2 + (s.y - fy) ** 2; if (q < nd) { nd = q; near = s; }
+    }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+    const vg = ctx.createRadialGradient(W * 0.6, H * 0.45, Math.min(W, H) * 0.25, W * 0.5, H * 0.5, Math.max(W, H) * 0.78);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.72)"); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 0.55; ctx.fillStyle = ctx.createPattern(grain, "repeat"); ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    if (near && capRead) { const called = near.read.slice(Math.max(0, cycle - 21), cycle + 1); capRead.innerHTML = called.split("").map((c, i, a) => `<span style="color:rgb(${COL[c].join(",")});${i === a.length - 1 ? "font-weight:700" : "opacity:.8"}">${c}</span>`).join(""); }
+    if (capCycle) capCycle.textContent = cycle + 1;
+    if (moving || pulsing) raf = requestAnimationFrame(draw);
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(draw); };
+  function next() { cycle = (cycle + 1) % 150; pulseT = performance.now(); kick(); }
+  cv.parentElement.addEventListener("pointermove", e => { const r = cv.getBoundingClientRect(); aim.x = (e.clientX - r.left) / r.width; aim.y = (e.clientY - r.top) / r.height; kick(); });
+  cv.parentElement.addEventListener("click", e => { if (e.target.closest("a,button")) return; next(); });
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; if (visible) kick(); }).observe(cv);
+  document.addEventListener("visibilitychange", () => { visible = !document.hidden; if (visible) kick(); });
+  let rt = 0; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { build(); kick(); }, 150); });
+  build(); cycle = 11; pulseT = performance.now() - 2000; kick();
+  if (!reduce) setInterval(() => { if (visible) next(); }, 1700);
+})();
+
+</script>
+</body>
+</html>

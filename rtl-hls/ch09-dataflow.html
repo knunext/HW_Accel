@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>9장. 작업 병렬과 스트리밍 | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">9장</span><span class="dots" aria-label="12장 중 9장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L243.0,40 L247.0,58 L304.2,58 L308.2,40 L488.0,40 L492.0,58 L549.2,58 L553.2,40 L733.0,40 L737.0,58 L794.2,58 L798.2,40 L980.0,40" style="stroke:var(--trace)"/></svg><div class="num">9장</div><h1>작업 병렬과 스트리밍</h1><p class="lede">함수와 루프를 겹쳐 돌리는 DATAFLOW, ping-pong 버퍼와 스트림, line buffer로 영상을 흘려 처리하는 법을 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">9.1</span>함수 단위로 보는 성능</h2>
+<p>7장의 IL과 II는 루프 하나 안의 이야기였습니다. 이제 한 단계 위로 올라가 함수(HLS에서는 하나의 모듈) 전체를 봅니다. 이때 쓰는 말이 둘 있습니다.</p>
+<ul>
+<li><b>task latency</b>: 함수 한 번이 시작해서 끝날 때까지 걸리는 시간.</li>
+<li><b>task interval</b>: 함수를 연달아 부를 때, 한 번 시작하고 다음 번을 시작하기까지의 간격. 처리율을 정하는 것은 이쪽입니다.</li>
+</ul>
+<p>파이프라인이 없으면 interval = latency입니다. 함수 안의 단계들을 겹쳐 돌리면 latency는 그대로여도 interval이 줄어듭니다. 4장의 파이프라인을 연산 대신 <b>함수나 루프 단위</b>로 하는 셈이고, 이것을 작업 단위 파이프라인(task pipelining)이라고 합니다. 한 가지 더: 아무리 내부가 빨라도 입출력 선의 비트 수가 처리율의 상한입니다. 32비트 입력 하나짜리 함수가 100 MHz에서 매 사이클 입력을 받아도 3.2 Gbit/s를 넘을 수 없습니다.</p>
+
+<h2><span class="sec">9.2</span>DATAFLOW: 단계를 겹쳐 돌리기</h2>
+<p>많은 처리가 “읽어 오기 → 계산 → 내보내기”처럼 여러 단계로 나뉩니다. 이 단계들을 함수(또는 루프)로 나눠 쓰고 DATAFLOW 지시어를 붙이면, HLS 도구가 단계마다 별도 회로를 만들고 단계 사이에 버퍼를 넣어 겹쳐 돌립니다.</p>
+<pre class="code">
+void top(int in[N], int out[N]) {
+#pragma HLS DATAFLOW
+  int buf1[N], buf2[N];
+  read_in(in, buf1);     // 1단계
+  compute(buf1, buf2);   // 2단계
+  write_out(buf2, out);  // 3단계
+}
+</pre>
+<p>단계 사이의 배열 <code>buf1</code>은 메모리 두 개짜리 <b>ping-pong 버퍼</b>가 됩니다. 앞 단계가 다음 데이터를 한쪽에 쓰는 동안, 뒤 단계는 다른 쪽에서 이전 데이터를 읽습니다. 배열 대신 <b>스트림</b>(<code>hls::stream</code>, 하드웨어로는 FIFO)으로 이으면, 뒤 단계가 앞 단계의 첫 원소가 나오자마자 일을 시작할 수 있어 latency가 더 줄어듭니다. 스트림은 처음부터 끝까지 순서대로 한 번씩만 읽고 쓰는 경우에 씁니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 9-1</b><span>세 단계를 겹쳐 돌리기</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>단계 길이는 프레임 하나를 처리하는 사이클. 스트림으로 이으면 앞 단계의 첫 원소가 2사이클 뒤 뒤 단계에 도착한다고 봅니다.</p>
+<p class="hint">프레임(데이터 묶음) 4개를 처리합니다. 색은 프레임, 가로는 시간(사이클)입니다.</p>
+<label class="sl"><span>1단계 길이</span><input type="range" id="df_a" min="2" max="24" value="8"><output id="df_av"></output></label>
+<label class="sl"><span>2단계 길이</span><input type="range" id="df_b" min="2" max="24" value="16"><output id="df_bv"></output></label>
+<label class="sl"><span>3단계 길이</span><input type="range" id="df_c" min="2" max="24" value="8"><output id="df_cv"></output></label>
+<div class="ctrl"><span class="lbl">방식</span><div class="seg" id="df_m"><button data-v="seq" aria-pressed="false">DATAFLOW 없음</button><button data-v="pp" aria-pressed="true">DATAFLOW, ping-pong</button><button data-v="st" aria-pressed="false">DATAFLOW, 스트림</button></div></div>
+<div class="scroll" id="dfsvg"></div>
+<div class="stats" id="dfstats"></div>
+<p class="msg" id="dfmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>DATAFLOW에서 interval은 가장 느린 단계가 정합니다. 4장에서 파이프라인 단을 고르게 나눠야 했던 것처럼, 여기서도 단계의 길이를 고르게 맞추는 것이 중요합니다. 가장 긴 단계 안을 7장의 루프 지시어로 더 빠르게 하거나, 단계를 둘로 나눕니다.</p>
+<div class="note warn"><b>DATAFLOW가 안 되는 코드</b>
+한 단계가 쓴 배열을 두 단계가 함께 읽거나, 뒤 단계의 결과가 다시 앞 단계로 돌아가거나, 단계 사이에 조건에 따라 건너뛰는 호출이 있으면 도구가 DATAFLOW를 적용하지 못하거나 순서대로 실행해 버립니다. 데이터가 한 방향으로만, 생산자 하나에서 소비자 하나로 흐르게 코드를 고쳐야 합니다. 스트림 FIFO가 너무 얕으면 단계들이 서로를 기다리다 멈추는 교착(deadlock)이 생길 수도 있습니다.</div>
+
+<h2><span class="sec">9.3</span>스트리밍 영상 처리: line buffer</h2>
+<p>FPGA가 가장 잘하는 일 중 하나는 카메라에서 들어오는 픽셀을 한 줄씩, 한 픽셀씩 흘려 처리하는 것입니다. 픽셀은 왼쪽 위부터 오른쪽으로, 줄이 끝나면 다음 줄로 한 번에 하나씩 들어옵니다(래스터 순서). 그런데 3×3 블러 같은 필터는 위아래 줄의 픽셀도 필요합니다.</p>
+<p>프레임 전체를 메모리에 저장했다가 처리하면 메모리도 크고 지연도 깁니다. 대신 <b>바로 위 두 줄만</b> 저장해 두면 충분합니다. 이것이 <b>line buffer</b>입니다. 그리고 지금 필요한 3×3 픽셀은 레지스터 9개짜리 <b>window</b>에 들고 있다가, 새 픽셀이 들어올 때마다 한 칸씩 옆으로 밉니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 9-2</b><span>픽셀을 흘리며 3×3 블러 하기</span></figcaption>
+<div class="body">
+<div class="ctrl"><button id="lb_s" class="pri">픽셀 하나 ↑</button><button id="lb_r">한 줄</button><button id="lb_a">자동 실행</button><button id="lb_0">처음으로</button></div>
+<div class="ctrl"><span class="lbl">가장자리 처리</span><div class="seg" id="lb_b"><button data-v="valid" aria-pressed="true">안쪽만 출력</button><button data-v="zero" aria-pressed="false">0으로 채움</button><button data-v="rep" aria-pressed="false">가장자리 복사</button></div></div>
+<div class="scroll"><svg id="lbsvg" class="sch" viewBox="0 0 560 272" role="img" aria-label="line buffer와 window"></svg></div>
+<p class="msg" id="lbmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<pre class="code">
+for (int r = 0; r &lt; H; r++)
+  for (int c = 0; c &lt; W; c++) {
+#pragma HLS PIPELINE II=1
+    pix_t p = in.read();                                  // 스트림에서 한 픽셀
+    for (int i = 0; i &lt; 3; i++) {                          // window를 왼쪽으로 한 칸
+      win[i][0] = win[i][1];  win[i][1] = win[i][2];
+    }
+    win[0][2] = lb[1][c];  win[1][2] = lb[0][c];  win[2][2] = p;   // 새 열 채우기
+    lb[1][c] = lb[0][c];   lb[0][c] = p;                         // line buffer 갱신
+    if (r &gt;= 2 &amp;&amp; c &gt;= 2) out.write(blur(win));                    // window가 꽉 찼으면 출력
+  }
+</pre>
+<p>8장에서 배운 대로, <code>win</code>은 9개를 한 사이클에 모두 읽어야 하므로 complete 분할로 레지스터가 되고, <code>lb</code>는 두 줄을 서로 다른 메모리에 두도록 dim=1로 나눕니다. 그러면 사이클마다 두 줄에서 하나씩 읽고 하나씩 쓸 수 있어 II=1이 됩니다. 가장자리는 실험에서 본 것처럼 안쪽만 출력하거나, 없는 픽셀을 0이나 가장 가까운 픽셀로 채웁니다. 어느 쪽이든 그 처리 때문에 II가 깨지지 않도록 조건문을 가볍게 유지하는 것이 요령입니다.</p>
+
+<h2><span class="sec">9.4</span>FFT: 단계마다 바뀌는 접근 모양</h2>
+<p>FFT는 N개짜리 신호를 log<sub>2</sub>N개의 단계로 처리합니다. 각 단계에서는 두 값을 짝지어 더하고 빼는 <b>나비 연산</b>을 N/2번 합니다. 문제는 짝을 짓는 간격이 단계마다 1, 2, 4, …로 바뀐다는 것입니다. 한 단계에 맞춰 배열을 분할하면 다음 단계에서는 같은 뱅크끼리 짝이 됩니다. 그래서 책 5장은 단계마다 따로 버퍼를 두고, 단계들을 DATAFLOW로 이어서 각 단계가 자기 모양에 맞는 메모리를 갖게 합니다.</p>
+<p>또 하나의 특징은 입력 순서입니다. 이 방식의 FFT는 입력을 주소의 비트를 거꾸로 뒤집은 순서(<b>비트 반전</b>, 예: 001 → 100)로 놓고 시작합니다. 비트 반전 단계는 원소를 멀리 떨어진 자리로 옮기므로, 이것만으로도 메모리를 순서대로 읽고 쓰기가 어렵습니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 9-3</b><span>8점 FFT의 나비 구조</span></figcaption>
+<div class="body">
+<div class="ctrl"><span class="lbl">볼 단계</span><div class="seg" id="ff_s"><button data-v="-1" aria-pressed="false">비트 반전</button><button data-v="0" aria-pressed="true">1단계</button><button data-v="1" aria-pressed="false">2단계</button><button data-v="2" aria-pressed="false">3단계</button></div></div>
+<div class="scroll"><svg id="ffsvg2" class="sch" viewBox="0 0 560 240" role="img" aria-label="FFT 나비 구조"></svg></div>
+<p class="msg" id="ffmsg2"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">9.5</span>FIFO가 얕으면 멈춘다: 교착</h2>
+<p>9.2의 주의 상자에서 말한 교착을 직접 봅시다. 데이터가 두 갈래로 나뉘었다가 다시 합쳐지는 구조입니다. 위 갈래(B)는 데이터를 그대로 넘기고, 아래 갈래(C)는 이동 평균처럼 값 4개가 모여야 첫 결과를 냅니다. D는 두 갈래에서 하나씩 받아야 진행합니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 9-4</b><span>FIFO 깊이와 교착</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>A는 값 하나를 B와 C 양쪽 FIFO에 동시에 써야 하며, 둘 중 하나라도 가득 차면 기다립니다. C의 입력·출력 FIFO 깊이는 2입니다.</p>
+<div class="scroll"><svg class="sch" viewBox="0 0 560 110" role="img" aria-label="갈라졌다 합쳐지는 dataflow">
+<defs><marker id="ah9f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>
+<rect x="10" y="38" width="60" height="34" rx="3" class="box"/><text x="40" y="60" text-anchor="middle" class="m">A</text>
+<path d="M70 48 H120 V24 H180 M70 62 H120 V86 H180" class="thin" marker-end="url(#ah9f)"/>
+<rect x="182" y="10" width="110" height="28" rx="3" style="fill:var(--accent-soft);stroke:var(--accent)"/><text x="237" y="29" text-anchor="middle" class="m" style="font-size:12px">FIFO B (깊이 ?)</text>
+<rect x="182" y="72" width="70" height="28" rx="3" style="fill:var(--sheet2);stroke:var(--ink2)"/><text x="217" y="91" text-anchor="middle" class="m" style="font-size:11px">FIFO 2</text>
+<path d="M252 86 H282" class="thin" marker-end="url(#ah9f)"/><rect x="284" y="70" width="100" height="32" rx="3" class="box"/><text x="334" y="90" text-anchor="middle" class="m" style="font-size:11.5px">C (4개 모아야)</text>
+<path d="M384 86 H404" class="thin" marker-end="url(#ah9f)"/><rect x="406" y="72" width="50" height="28" rx="3" style="fill:var(--sheet2);stroke:var(--ink2)"/><text x="431" y="91" text-anchor="middle" class="m" style="font-size:11px">FIFO 2</text>
+<path d="M292 24 H490 V40 M456 86 H490 V70" class="thin" marker-end="url(#ah9f)"/><rect x="470" y="40" width="60" height="30" rx="3" class="box"/><text x="500" y="60" text-anchor="middle" class="m">D</text>
+</svg></div>
+<label class="sl"><span>FIFO B 깊이</span><input type="range" id="dl_d" min="1" max="6" value="2"><output id="dl_dv"></output></label>
+<div class="scroll" id="dlgrid"></div>
+<p class="msg" id="dlmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>B 갈래는 C가 첫 결과를 낼 때까지 값 4개를 들고 버텨야 합니다. 그보다 얕으면 A가 B에 쓰지 못해 멈추고, 그러면 C는 네 번째 값을 영영 못 받고, D는 C를 기다립니다. 모두가 서로를 기다리는 교착입니다. 이런 구조에서는 짧은 갈래의 FIFO를 긴 갈래가 품고 있는 값의 개수 이상으로 깊게 잡아야 합니다. C 시뮬레이션은 FIFO 크기를 무한으로 보기 때문에 이 문제를 못 찾고, C/RTL co-simulation에서야 드러나는 경우가 많습니다.</p>
+
+<h2><span class="sec">9.6</span>더 큰 예로 이어지는 것들</h2>
+<p>이 장의 두 가지 도구, 단계를 나눠 겹쳐 돌리는 DATAFLOW와 순서대로 흘리는 스트림은 큰 설계의 뼈대가 됩니다. FFT는 9.4에서 본 것처럼 비트 반전 단계와 나비 연산 단계들을 DATAFLOW로 잇습니다. 허프만 부호화는 빈도 세기, 정렬, 트리 만들기, 부호 만들기처럼 성격이 다른 여러 단계를 잇습니다. 11장에서 볼 시스톨릭 배열도 PE들을 스트림으로 이은 DATAFLOW 설계로 쓸 수 있습니다.</p>
+
+<div class="real"><b>실제 도구에서는</b>DATAFLOW 조건을 어기면 도구가 경고를 내고 단계를 차례로 실행해 버리므로 경고를 꼭 확인하세요. 스트림 FIFO의 기본 깊이는 작습니다(보통 2). 단계 사이 속도가 출렁이면 STREAM 지시어로 깊이를 늘려야 하고, 교착은 C/RTL co-simulation에서 드러나는 경우가 많습니다.</div>
+<div class="recap"><b>이 장의 요점</b><ul><li>함수 단위 성능은 task latency와 task interval로 봅니다. 입출력 비트 수가 처리율의 상한입니다.</li><li>DATAFLOW로 단계를 겹치면 interval은 가장 긴 단계가 정합니다. 단계 사이는 ping-pong 버퍼나 스트림입니다.</li><li>영상은 line buffer와 window로 한 픽셀씩 흘려 처리합니다. 가장자리 처리가 II를 깨지 않게 합니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 1.4.1 Performance Characterization, 5.4 Task Pipelining, 7.3 Block Matrix Multiplication, 9.2.1 Line Buffers and Frame Buffers, 9.2.3 Boundary Conditions, 11장 Huffman Encoding</p></div>
+<h2><span class="sec">9.7</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+(()=>{ // 실험 9-1
+  let md='pp';segBind('df_m',v=>{md=v;draw();});['df_a','df_b','df_c'].forEach(id=>onInput(id,draw));
+  function draw(){
+    const L=[+$('#df_a').value,+$('#df_b').value,+$('#df_c').value],F=4,S=3;
+    ['df_a','df_b','df_c'].forEach((id,i)=>$('#'+id+'v').textContent=L[i]+'사이클');
+    const st=[...Array(S)].map(()=>Array(F).fill(0)),en=[...Array(S)].map(()=>Array(F).fill(0));let t=0;
+    for(let f=0;f<F;f++)for(let s=0;s<S;s++){
+      let a;
+      if(md==='seq'){a=t;}
+      else if(md==='pp'){a=Math.max(f?en[s][f-1]:0,s?en[s-1][f]:0,(s<S-1&&f>=2)?en[s+1][f-2]:0);}
+      else{a=Math.max(f?en[s][f-1]:0,s?st[s-1][f]+2:0);}
+      let e=a+L[s];if(md==='st'&&s)e=Math.max(e,en[s-1][f]+2);
+      st[s][f]=a;en[s][f]=e;t=e;}
+    const end=en[S-1][F-1],intv=F>1?en[S-1][F-1]-en[S-1][F-2]:end,lat=en[S-1][0]-st[0][0];
+    const cw=Math.max(2,Math.min(10,500/end)),lw=60,W=Math.max(480,lw+end*cw+10),H=S*30+40;
+    let g='<svg class="sch" style="min-width:480px;max-width:'+W+'px" viewBox="0 0 '+W+' '+H+'">';
+    for(let s=0;s<S;s++){const y=8+s*30;g+='<text x="'+(lw-6)+'" y="'+(y+15)+'" text-anchor="end" class="m dim" style="font-size:11px">'+(s+1)+'단계</text>';
+      for(let f=0;f<F;f++)g+='<rect x="'+(lw+st[s][f]*cw)+'" y="'+(y+2)+'" width="'+Math.max(1,(en[s][f]-st[s][f])*cw-1)+'" height="20" rx="2" style="fill:var(--p'+f+')"/>'+((en[s][f]-st[s][f])*cw>26?'<text x="'+(lw+(st[s][f]+en[s][f])/2*cw)+'" y="'+(y+16)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:10px">F'+f+'</text>':'');}
+    for(let x=0;x<=end;x+=end>120?20:10)g+='<text x="'+(lw+x*cw)+'" y="'+(H-6)+'" text-anchor="middle" class="m dim" style="font-size:9.5px">'+x+'</text>';
+    $('#dfsvg').innerHTML=g+'</svg>';
+    $('#dfstats').innerHTML=[['프레임 4개 끝',end+'사이클'],['task latency',lat+'사이클'],['task interval',intv+'사이클'],['가장 긴 단계',Math.max(...L)+'사이클']].map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const m=$('#dfmsg');
+    if(md==='seq'){m.className='msg';m.innerHTML='한 프레임의 세 단계가 다 끝나야 다음 프레임을 시작합니다. interval = latency = '+(L[0]+L[1]+L[2])+'사이클입니다.';}
+    else if(md==='pp'){m.className='msg ok';m.innerHTML='단계마다 다른 프레임을 처리합니다. interval은 가장 긴 단계('+Math.max(...L)+'사이클)로 줄었습니다. latency는 그대로입니다.'+(Math.max(...L)>2*Math.min(...L)?' 단계 길이가 고르지 않아 짧은 단계는 기다리는 시간이 깁니다.':'');}
+    else{m.className='msg ok';m.innerHTML='스트림으로 이으면 뒤 단계가 앞 단계의 첫 원소가 나오자마자 시작하므로, 한 프레임의 latency가 '+lat+'사이클로 줄었습니다. interval은 여전히 가장 긴 단계가 정합니다.';}
+  }
+  draw();
+})();
+
+(()=>{ // 실험 9-2
+  const W=10,H=7,IMG=[];for(let y=0;y<H;y++){const r=[];for(let x=0;x<W;x++)r.push(Math.max(0,Math.round(9-1.6*(Math.abs(x-4.5)+Math.abs(y-3)))));IMG.push(r);}
+  let p=-1,bd='valid',timer=null;
+  const K=[[1,2,1],[2,4,2],[1,2,1]];
+  const px=(y,x)=>{if(y>=0&&y<H&&x>=0&&x<W)return IMG[y][x];if(bd==='zero')return 0;return IMG[Math.min(H-1,Math.max(0,y))][Math.min(W-1,Math.max(0,x))];};
+  const outv=(y,x)=>{let s=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++)s+=K[i][j]*px(y-1+i,x-1+j);return s/16;};
+  const pal=r=>'var(--p'+(r%8)+')';
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#lb_a').textContent='자동 실행';}}
+  function draw(){
+    const r=p<0?-1:Math.floor(p/W),c=p<0?-1:p%W;let s='';
+    const cs=17,ix=8,iy=22;
+    s+='<text x="'+ix+'" y="14" class="dim" style="font-size:11.5px">들어오는 영상 (10×7)</text>';
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){const idx=y*W+x,arr=idx<=p,cur=idx===p;
+      s+='<rect x="'+(ix+x*cs)+'" y="'+(iy+y*cs)+'" width="'+(cs-1)+'" height="'+(cs-1)+'" style="fill:var(--ink);fill-opacity:'+(arr?0.08+IMG[y][x]/9*0.85:0.04)+';stroke:'+(cur?'var(--accent)':'none')+';stroke-width:2.5"/>';}
+    // line buffers
+    const lx=214,ly=40,lc=17;
+    s+='<text x="'+lx+'" y="'+(ly-8)+'" class="dim" style="font-size:11.5px">line buffer (윗줄 두 개)</text>';
+    for(let k=0;k<2;k++){s+='<text x="'+(lx-4)+'" y="'+(ly+k*20+13)+'" text-anchor="end" class="m dim" style="font-size:9.5px">lb'+k+'</text>';
+      for(let x=0;x<W;x++){let row=r<0?-1:(x<=c?r-k:r-1-k);const v=row>=0?IMG[row][x]:null;
+        s+='<rect x="'+(lx+x*lc)+'" y="'+(ly+k*20)+'" width="'+(lc-1)+'" height="17" rx="2" style="fill:'+(v===null?'var(--sheet2)':pal(row))+';opacity:'+(v===null?1:0.85)+'"/>'+(v!==null?'<text x="'+(lx+x*lc+8)+'" y="'+(ly+k*20+12.5)+'" text-anchor="middle" class="m" style="font-size:9px;fill:var(--onacc)">'+v+'</text>':'');}}
+    s+='<text x="'+lx+'" y="'+(ly+56)+'" class="dim" style="font-size:10px">색 = 몇 번째 줄의 픽셀인지</text>';
+    // window
+    const wx=250,wy=132,wc=26;
+    s+='<text x="'+wx+'" y="'+(wy-8)+'" class="dim" style="font-size:11.5px">window (3×3 레지스터)</text>';
+    for(let i=0;i<3;i++)for(let j=0;j<3;j++){const yy=r-2+i,xx=c-2+j,ok=r>=0&&yy>=0&&xx>=0;
+      s+='<rect x="'+(wx+j*wc)+'" y="'+(wy+i*wc)+'" width="'+(wc-2)+'" height="'+(wc-2)+'" rx="2" style="fill:'+(ok?pal(yy):'var(--sheet2)')+';opacity:'+(ok?0.85:1)+'"/>'+(ok?'<text x="'+(wx+j*wc+12)+'" y="'+(wy+i*wc+16)+'" text-anchor="middle" class="m" style="font-size:11px;fill:var(--onacc)">'+IMG[yy][xx]+'</text>':'');}
+    const full=r>=2&&c>=2;
+    s+='<text x="'+(wx+40)+'" y="'+(wy+96)+'" text-anchor="middle" class="m" style="font-size:11px;fill:'+(full?'var(--ok)':'var(--ink2)')+'">'+(full?'꽉 참 → 출력':'아직 덜 참')+'</text>';
+    // output
+    const ox=400,oy=22,oc=15;
+    s+='<text x="'+ox+'" y="14" class="dim" style="font-size:11.5px">출력 영상</text>';
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){let show=false;
+      if(bd==='valid'){if(y>=1&&y<=H-2&&x>=1&&x<=W-2)show=(y+1)*W+(x+1)<=p;}
+      else show=Math.min(y+1,H-1)*W+Math.min(x+1,W-1)<=p;
+      const inside=bd!=='valid'||(y>=1&&y<=H-2&&x>=1&&x<=W-2);
+      s+='<rect x="'+(ox+x*oc)+'" y="'+(oy+y*oc)+'" width="'+(oc-1)+'" height="'+(oc-1)+'" style="fill:'+(inside?'var(--trace)':'var(--grid)')+';fill-opacity:'+(show?0.08+outv(y,x)/9*0.85:(inside?0.05:0.6))+'"/>';}
+    const fb=W*H,lbm=2*W;
+    s+='<text x="8" y="250" class="m" style="font-size:11.5px">저장 공간: 프레임 전체 '+fb+'픽셀 vs line buffer '+lbm+' + window 9 = '+(lbm+9)+'픽셀</text><text x="8" y="266" class="m dim" style="font-size:11px">폭 1920, 높이 1080 영상이면 약 207만 픽셀 대 3849 픽셀</text>';
+    $('#lbsvg').innerHTML=s;
+    const m=$('#lbmsg');
+    if(p<0)m.innerHTML='아직 픽셀이 들어오지 않았습니다. 픽셀 하나씩 넣어 보세요.';
+    else m.innerHTML='지금 ('+r+'행, '+c+'열) 픽셀이 들어왔습니다. line buffer의 '+c+'열은 한 칸씩 위로 밀리고(lb0 → lb1), 새 픽셀이 lb0에 들어갑니다. '+(full?'window가 꽉 차서 ('+(r-1)+'행, '+(c-1)+'열) 출력 픽셀을 계산했습니다. 출력은 입력보다 한 줄과 한 픽셀 늦습니다.':'window의 세 줄이 아직 다 차지 않았습니다.');
+    if(p>=W*H-1)stop();
+  }
+  const step=n=>{p=Math.min(W*H-1,p+n);draw();};
+  $('#lb_s').onclick=()=>step(1);$('#lb_r').onclick=()=>step(W);$('#lb_0').onclick=()=>{stop();p=-1;draw();};
+  $('#lb_a').onclick=()=>{if(timer){stop();return;}if(p>=W*H-1)p=-1;$('#lb_a').textContent='멈춤';timer=setInterval(()=>step(1),260);};
+  segBind('lb_b',v=>{bd=v;draw();});draw();
+})();
+
+(()=>{ // 실험 9-3
+  const N=8,B=3,rev=i=>parseInt(i.toString(2).padStart(B,'0').split('').reverse().join(''),2),bin=i=>i.toString(2).padStart(B,'0');
+  let st=0;segBind('ff_s',v=>{st=+v;draw();});
+  function draw(){
+    const X=[90,200,320,440],y=i=>22+i*26;let s='';
+    for(let i=0;i<N;i++){s+='<text x="8" y="'+(y(i)+4)+'" class="m" style="font-size:11px;'+(st===-1?'fill:var(--accent);font-weight:600':'')+'">x['+rev(i)+'] '+bin(rev(i))+'</text>';
+      s+='<text x="'+(X[3]+12)+'" y="'+(y(i)+4)+'" class="m dim" style="font-size:11px">X['+i+']</text>';}
+    for(let k=0;k<3;k++){const span=1<<k,on=k===st;
+      for(let g=0;g<N;g+=2*span)for(let j=0;j<span;j++){const a=g+j,b=a+span,c=on?'var(--accent)':'var(--lo)',w=on?2:1.2;
+        s+='<path d="M'+X[k]+' '+y(a)+' L'+X[k+1]+' '+y(a)+' M'+X[k]+' '+y(b)+' L'+X[k+1]+' '+y(b)+' M'+X[k]+' '+y(a)+' L'+X[k+1]+' '+y(b)+' M'+X[k]+' '+y(b)+' L'+X[k+1]+' '+y(a)+'" style="fill:none;stroke:'+c+';stroke-width:'+w+'"/>';}
+      s+='<text x="'+((X[k]+X[k+1])/2)+'" y="232" text-anchor="middle" class="m" style="font-size:11px;'+(on?'fill:var(--accent);font-weight:600':'fill:var(--ink2)')+'">'+(k+1)+'단계 (간격 '+span+')</text>';}
+    for(let k=0;k<4;k++)for(let i=0;i<N;i++)s+='<circle cx="'+X[k]+'" cy="'+y(i)+'" r="3.5" style="fill:var(--ink)"/>';
+    $('#ffsvg2').innerHTML=s;
+    if(st===-1){$('#ffmsg2').innerHTML='입력을 주소의 비트를 뒤집은 순서로 놓습니다. x[1](001)이 4번 자리(100)로, x[3](011)이 6번 자리(110)로 갑니다. 이웃한 원소가 멀리 흩어지므로 순서대로 읽고 쓰는 메모리 접근이 깨집니다.';return;}
+    const span=1<<st,pairs=[];for(let g=0;g<N;g+=2*span)for(let j=0;j<span;j++)pairs.push('('+(g+j)+', '+(g+j+span)+')');
+    const same2=st===0?'cyclic 2로 나누면 짝마다 서로 다른 뱅크라 좋지만':'cyclic 2로 나누면 짝이 같은 뱅크에 놓여 충돌하고';
+    $('#ffmsg2').innerHTML=(st+1)+'단계는 간격 '+span+'인 짝 '+pairs.join(' ')+'을 읽어 나비 연산을 합니다. '+same2+', 다른 단계에서는 사정이 반대가 됩니다. 한 가지 분할로 모든 단계를 만족시킬 수 없어서, 단계마다 버퍼를 따로 두고 DATAFLOW로 잇습니다.';
+  }
+  draw();
+})();
+
+(()=>{ // 실험 9-4
+  onInput('dl_d',draw);
+  function sim(dB){
+    const NX=12,DC=2;let a=0,B=[],Ci=[],Co=[],win=0,d=0,dead=-1;const R=[];
+    for(let t=0;t<24;t++){let act=false,aSt='';
+      if(B.length&&Co.length){B.shift();Co.shift();d++;act=true;}
+      if(Ci.length&&(win<3||Co.length<DC)){const v=Ci.shift();win++;if(win>=4)Co.push(v);act=true;}
+      if(a<NX){if(B.length<dB&&Ci.length<DC){B.push(a);Ci.push(a);aSt='x'+a;a++;act=true;}else aSt='기다림';}else aSt='끝';
+      R.push({t,aSt,b:B.length,ci:Ci.length,win:Math.min(win,4),co:Co.length,d});
+      if(!act&&d<NX-3){dead=t;break;}
+      if(d>=NX-3)break;}
+    return {R,dead,d};
+  }
+  function draw(){
+    const dB=+$('#dl_d').value;$('#dl_dv').textContent=dB;
+    const r=sim(dB),R=r.R;
+    const row=(name,f,st)=>'<tr><th>'+name+'</th>'+R.map(x=>'<td style="'+(st?st(x):'')+'">'+f(x)+'</td>').join('')+'</tr>';
+    const bar=(n,cap)=>'<span style="display:inline-block;width:'+(cap*11)+'px;height:11px;background:var(--sheet2);border-radius:2px;position:relative;vertical-align:middle"><span style="position:absolute;left:0;top:0;bottom:0;width:'+(n*11)+'px;background:'+(n>=cap?'var(--bad)':'var(--trace)')+';border-radius:2px"></span></span>';
+    let t='<table class="t" style="width:auto;font-family:var(--mono);font-size:11.5px;text-align:center"><tr><th>사이클</th>'+R.map(x=>'<th style="text-align:center;padding:3px 5px">'+x.t+'</th>').join('')+'</tr>';
+    t+=row('A가 쓴 값',x=>x.aSt,x=>x.aSt==='기다림'?'color:var(--bad);font-weight:600':'');
+    t+=row('FIFO B',x=>bar(x.b,dB));t+=row('C 입력 FIFO',x=>bar(x.ci,2));t+=row('C가 모은 값',x=>x.win+'/4');t+=row('C 출력 FIFO',x=>bar(x.co,2));t+=row('D가 받은 쌍',x=>x.d,x=>x.t===r.dead?'background:var(--bad-soft);color:var(--bad);font-weight:600':'');
+    $('#dlgrid').innerHTML=t+'</table>';
+    const m=$('#dlmsg');
+    if(r.dead>=0){m.className='msg bad';m.innerHTML=r.dead+'번 사이클에서 아무도 움직이지 못합니다. FIFO B가 가득 차서 A가 기다리고, C는 네 번째 값을 못 받아 결과를 못 내고, D는 C를 기다립니다. 교착입니다.';}
+    else{m.className='msg ok';m.innerHTML='FIFO B가 C의 첫 결과가 나올 때까지 값을 품고 있을 만큼 깊어서 끝까지 흘러갑니다. D가 '+r.d+'쌍을 모두 받았습니다.';}
+  }
+  draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'세 단계의 길이가 10, 30, 10사이클인 DATAFLOW 설계의 task interval은 대략?',o:['10사이클','30사이클','50사이클'],a:1,e:'맞습니다. 가장 긴 단계가 interval을 정합니다. 2단계를 둘로 나누거나 내부를 빠르게 하는 것이 다음 할 일입니다.'},
+  {q:'DATAFLOW 단계 사이를 배열 대신 스트림(FIFO)으로 이으면 주로 좋아지는 것은?',o:['task interval','task latency','곱셈기 수'],a:1,e:'맞습니다. 뒤 단계가 앞 단계 전체가 끝날 때까지 기다리지 않고 첫 원소부터 시작하므로 latency가 줄어듭니다. interval은 여전히 가장 느린 단계가 정합니다.'},
+  {q:'폭 1920픽셀 영상에 5×5 필터를 스트리밍으로 적용하려면 line buffer에 몇 줄이 필요한가요?',o:['2줄','4줄','5줄'],a:1,e:'맞습니다. 지금 들어오는 줄을 빼고 위의 4줄을 저장해야 5×5 window를 채울 수 있습니다.'},
+  {q:'32비트 입력 하나만 받는 함수가 200 MHz로 동작할 때, 내부를 아무리 빠르게 해도 넘을 수 없는 입력 처리율은?',o:['3.2 Gbit/s','6.4 Gbit/s','12.8 Gbit/s'],a:1,e:'맞습니다. 사이클마다 32비트 × 2억 번 = 6.4 Gbit/s가 입력 선이 나를 수 있는 최대입니다.'},
+  {q:'N점 FFT(N=2의 거듭제곱)의 나비 연산 단계 수는?',o:['N','N/2','log₂N'],a:2,e:'맞습니다. 단계마다 짝 간격이 두 배씩 늘어 log₂N 단계면 끝나고, 단계마다 나비 연산은 N/2번입니다.'},
+  {q:'갈라졌다 합쳐지는 DATAFLOW에서 교착을 막으려면?',o:['짧은 갈래의 FIFO를 긴 갈래가 품는 값의 개수 이상으로 깊게 한다','클럭을 낮춘다','FIFO를 모두 없앤다'],a:0,e:'맞습니다. 짧은 갈래가 긴 갈래의 첫 결과가 나올 때까지 값을 버티고 있을 수 있어야 합니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch08-memory.html"><span>이전</span>8장. 메모리와 의존성</a><a class="nx" href="ch10-numbers-fir.html"><span>다음</span>10장. 수 표현과 DSP 예제</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li><a href="ch06-hls.html">6장. HLS: C가 회로가 되는 과정</a></li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li class="on">9장. 작업 병렬과 스트리밍</li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>

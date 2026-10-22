@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>6장. HLS | RTL과 HLS 입문</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --paper:#F5F7F6; --sheet:#FFFFFF; --sheet2:#ECF0EE; --ink:#18222D; --ink2:#4B5764; --rule:#D3DAD7;
+  --grid:#E2E7E5; --trace:#0B6E8A; --trace-soft:#D5EBF1; --lo:#98A4AF;
+  --accent:#2B55C0; --accent-soft:#E1E8FA; --onacc:#FFFFFF;
+  --bad:#C0342A; --bad-soft:#F8DFDB; --ok:#2B7A4B; --ok-soft:#DAEFE2; --warn:#A5620E; --warn-soft:#F6EAD6;
+  --p0:#2B55C0; --p1:#C0342A; --p2:#2B7A4B; --p3:#8A4FBF; --p4:#A5620E; --p5:#0B6E8A; --p6:#B03A7A; --p7:#5A6B2E;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+    --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+    --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+    --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+    --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F141A; --sheet:#161D25; --sheet2:#1E2731; --ink:#E3E8ED; --ink2:#A2ADB8; --rule:#2C3743;
+  --grid:#232D38; --trace:#4EC1D8; --trace-soft:#163640; --lo:#5E6B78;
+  --accent:#87A7FF; --accent-soft:#1D2946; --onacc:#0F141A;
+  --bad:#FF7B6C; --bad-soft:#3B1F1C; --ok:#62C98E; --ok-soft:#173223; --warn:#E3A44A; --warn-soft:#372A15;
+  --p0:#87A7FF; --p1:#FF7B6C; --p2:#62C98E; --p3:#C49BFF; --p4:#E3A44A; --p5:#4EC1D8; --p6:#F07DBA; --p7:#B5C46A;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 56px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.75;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+img,svg{max-width:100%}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:980px;margin:0 auto;padding:9px 18px;display:flex;align-items:baseline;gap:14px;font-size:14px}
+.bar .series{color:var(--ink2)}
+.bar .here{font-weight:600}
+.bar .dots{margin-left:auto;display:flex;gap:4px;align-items:center}
+.bar .dots i{display:block;width:14px;height:4px;background:var(--rule)}
+.bar .dots i.on{background:var(--trace)}
+
+.hero{max-width:980px;margin:0 auto;padding:30px 18px 6px}
+.hero .wave{display:block;width:100%;height:auto;margin-bottom:18px}
+.hero .wave path{fill:none;stroke-width:2}
+.hero .num{font-family:var(--mono);font-size:15px;color:var(--trace)}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.18;margin:4px 0 12px;font-weight:600;letter-spacing:-0.015em}
+.hero .lede{font-size:18px;color:var(--ink2);max-width:640px;margin:0}
+
+main{max-width:980px;margin:0 auto;padding:0 18px 72px}
+.prose{max-width:700px}
+h2{font-size:24px;margin:52px 0 8px;font-weight:600;line-height:1.35}
+h2 .sec{font-family:var(--mono);font-weight:400;color:var(--trace);margin-right:12px;font-size:.8em}
+h3{font-size:18px;margin:28px 0 6px;font-weight:600}
+p{margin:10px 0}
+ul,ol{padding-left:1.3em;margin:10px 0}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:.86em;background:var(--sheet2);padding:1px 5px;border-radius:3px}
+b,strong{font-weight:600}
+.math{font-family:var(--mono);font-size:15px;background:var(--sheet);border:1px solid var(--rule);padding:10px 14px;margin:14px 0;overflow-x:auto;white-space:nowrap}
+
+.fig{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;margin:30px 0}
+.fig>.cap{display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fig>.cap b{font-family:var(--mono);font-weight:500;color:var(--trace);font-size:14px}
+.fig>.cap span{font-weight:600}
+.fig>.body{padding:14px 16px 16px}
+.fig .sub{font-size:14px;font-weight:600;margin:18px 0 4px;color:var(--ink2)}
+.hint{font-size:14.5px;color:var(--ink2);margin:8px 0}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:10px 0}
+button{font:inherit;font-size:14px;line-height:1.3;padding:8px 13px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:4px;cursor:pointer;min-height:38px}
+button:hover{border-color:var(--ink2)}
+button.pri{background:var(--accent);color:var(--onacc);border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;gap:0}
+.seg button{border-radius:0;margin-left:-1px}
+.seg button:first-child{border-radius:4px 0 0 4px;margin-left:0}
+.seg button:last-child{border-radius:0 4px 4px 0}
+.seg button[aria-pressed="true"]{position:relative;z-index:1}
+.lbl{font-size:14px;color:var(--ink2)}
+.sl{display:grid;grid-template-columns:minmax(92px,auto) 1fr 5.2em;gap:10px;align-items:center;font-size:14px;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:13px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+input[type=number],input[type=text]{font:inherit;font-size:15px;padding:6px 9px;border:1px solid var(--rule);border-radius:4px;background:var(--paper);color:var(--ink);min-height:38px}
+input[type=number]{width:5.5em;font-family:var(--mono)}
+input[type=text]{font-family:var(--mono);width:100%}
+
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.sch{display:block;width:100%;height:auto;min-width:500px;max-width:780px}
+.sch text{font-size:13px;fill:var(--ink)}
+.sch .m{font-family:var(--mono)}
+.sch .dim{fill:var(--ink2)}
+.sch .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.4}
+.sch .wire{fill:none;stroke-width:2.4}
+.sch .thin{fill:none;stroke:var(--ink2);stroke-width:1.2}
+
+pre.code{font-family:var(--mono);font-size:13px;line-height:1.6;background:var(--sheet2);border-left:3px solid var(--trace);padding:11px 14px;margin:14px 0;overflow-x:auto;border-radius:0 4px 4px 0;tab-size:2;white-space:pre}
+pre.code .ln{display:block;padding:0 8px;margin:0 -8px;min-height:1.6em}
+pre.code .ln.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tk-k{color:var(--accent);font-weight:500}
+.tk-n{color:var(--warn)}
+.tk-c{color:var(--ink2);font-style:italic}
+.tk-p{color:var(--p3)}
+
+.note{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:20px 0}
+.note.warn{border-color:var(--warn)}
+.note>b:first-child{display:block;margin-bottom:2px}
+
+.stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:12px 0}
+.stat{display:flex;flex-direction:column;min-width:5em}
+.stat .k{font-size:12.5px;color:var(--ink2)}
+.stat .v{font-family:var(--mono);font-size:19px;line-height:1.35}
+.good{color:var(--ok)} .badc{color:var(--bad)} .warnc{color:var(--warn)}
+.msg{font-size:14.5px;padding:9px 12px;border-radius:4px;background:var(--sheet2);margin:10px 0}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.g2>*{min-width:0}
+@media (max-width:720px){.g2{grid-template-columns:1fr}}
+
+table.t{border-collapse:collapse;font-size:14px;width:100%}
+.t th,.t td{border-bottom:1px solid var(--rule);padding:6px 9px;text-align:left;vertical-align:top}
+.t th{font-weight:600;color:var(--ink2);font-size:13px}
+.t td.m{font-family:var(--mono)}
+.t td.chg{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.wv{display:block}
+.wv text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.wv .wn{fill:var(--ink2)}
+.wv .wg{stroke:var(--grid);stroke-width:1}
+.wv .wax{fill:var(--ink2);font-size:10.5px;text-anchor:middle}
+.wv .wb{fill:none;stroke:var(--trace);stroke-width:2}
+.wv .wc{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.wv .wbus{fill:var(--trace-soft);stroke:var(--trace);stroke-width:1.3}
+.wv .wx{fill:var(--bad-soft);stroke:var(--bad);stroke-width:1.2}
+.wv .whl{fill:var(--accent-soft)}
+
+.q{margin:18px 0}
+.q .qt{font-weight:600}
+.q .opts{display:grid;gap:6px;margin-top:8px}
+.q .opt{text-align:left;width:100%}
+.q .opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.q .opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.q .ex{font-size:14.5px;color:var(--ink2);margin-top:8px}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;font-size:14px;color:var(--ink2)}
+footer ol.toc{columns:2;column-gap:28px;padding-left:0;list-style:none}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline;text-underline-offset:3px}
+.bar a.series{color:var(--ink2);text-decoration:none}
+.bar a.series:hover{color:var(--accent)}
+nav.pn{display:flex;justify-content:space-between;gap:14px;margin:0 0 22px;flex-wrap:wrap}
+nav.pn a{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:4px;padding:10px 14px;color:var(--ink);font-size:15px;font-weight:600;max-width:48%;background:var(--sheet)}
+nav.pn a:hover{border-color:var(--accent);text-decoration:none}
+nav.pn a span{font-size:12.5px;font-weight:400;color:var(--ink2)}
+nav.pn a.nx{margin-left:auto;text-align:right}
+@media (max-width:560px){nav.pn a{max-width:100%;flex:1 1 100%}}
+footer li.on{color:var(--ink);font-weight:600}
+@media (max-width:560px){footer ol.toc{columns:1}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.assume{font-size:14px;color:var(--ink);background:var(--warn-soft);border:1px dashed var(--warn);border-radius:4px;padding:7px 11px;margin:8px 0}
+.assume>b:first-child{color:var(--warn);margin-right:8px;font-family:var(--mono);font-size:12.5px}
+.real{border-left:3px solid var(--p3);background:var(--sheet);padding:10px 14px;margin:24px 0;border-radius:0 4px 4px 0;font-size:15px}
+.real>b:first-child{display:block;color:var(--p3);margin-bottom:2px}
+.recap{border:1.5px solid var(--trace);border-radius:4px;padding:12px 16px;margin:30px 0 10px;background:var(--sheet)}
+.recap>b:first-child{display:block;font-size:16px;color:var(--trace);margin-bottom:2px}
+.recap ul{margin:6px 0}
+.recap .book{font-size:14.5px;color:var(--ink2);margin:8px 0 0;border-top:1px dashed var(--rule);padding-top:8px}
+.recap .book b{color:var(--ink);margin-right:6px}
+</style>
+<script>'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fx=(v,d=1)=>Number(v).toFixed(d);
+const KW=new Set('module endmodule input output inout reg wire always begin end if else case endcase default assign posedge negedge or parameter localparam for int float void return const static integer signed while'.split(' '));
+
+function hl(src){
+  return esc(src).replace(/(\/\/[^\n]*)|(#pragma[^\n]*)|(\b\d+'[bhdBHD][0-9a-fA-FxXzZ_]+|\b\d+(?:\.\d+)?\b)|\b([A-Za-z_]\w*)\b/g,(m,c,p,n,w)=>{
+    if(c) return '<span class="tk-c">'+c+'</span>';
+    if(p) return '<span class="tk-p">'+p+'</span>';
+    if(n) return '<span class="tk-n">'+n+'</span>';
+    if(w&&KW.has(w)) return '<span class="tk-k">'+w+'</span>';
+    return m;
+  });
+}
+function codeLines(src,on){
+  const set=Array.isArray(on)?on:[on];
+  return src.replace(/^\n/,'').replace(/\s+$/,'').split('\n').map((l,i)=>'<span class="ln'+(set.includes(i)?' on':'')+'" data-i="'+i+'">'+(hl(l)||' ')+'</span>').join('');
+}
+function onInput(id,fn){const e=document.getElementById(id);e.addEventListener('input',fn);return e;}
+function segBind(id,fn){
+  const g=document.getElementById(id);
+  g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    $$('button',g).forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));fn(b.dataset.v,b);});
+  return ()=>{const b=$('button[aria-pressed="true"]',g);return b?b.dataset.v:null;};
+}
+
+/* 파형: sig=[{n,t:'clk'|'b'|'v'|'m',v:[...],f?,col?}]
+   res = 사이클당 샘플 수, 값은 res 단위로 들어감. 'b'는 0~1 (0.5=중간), null=X */
+function wave(sig,o){
+  o=o||{};
+  const res=o.res||1,cw=o.cw||40,rh=o.rh||28,lw=o.lw||78,cyc=o.cycles,sw=cw/res;
+  const W=lw+cyc*cw+6,H=sig.length*rh+(o.axis===false?4:18);
+  let s='<svg class="wv" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="타이밍 파형">';
+  (o.hl||[]).forEach(c=>{s+='<rect class="whl" x="'+(lw+c*cw)+'" y="0" width="'+cw+'" height="'+(H-14)+'"/>';});
+  for(let c=0;c<=cyc;c++){const x=lw+c*cw;s+='<line class="wg" x1="'+x+'" y1="0" x2="'+x+'" y2="'+(H-14)+'"/>';}
+  sig.forEach((g,i)=>{
+    const y0=i*rh+3,yh=y0+5,yl=y0+rh-8,ym=(yh+yl)/2;
+    s+='<text class="wn" x="'+(lw-8)+'" y="'+(ym+4)+'" text-anchor="end">'+esc(g.n)+'</text>';
+    const Y=v=>(v===null||v===undefined)?ym:yl-v*(yl-yh);
+    if(g.t==='clk'){
+      let d='M'+lw+','+yl;
+      for(let c=0;c<cyc;c++){const x=lw+c*cw;d+=' L'+x+','+yl+' L'+x+','+yh+' L'+(x+cw/2)+','+yh+' L'+(x+cw/2)+','+yl;}
+      d+=' L'+(lw+cyc*cw)+','+yl;
+      s+='<path class="wc" d="'+d+'"/>';
+    }else if(g.t==='b'){
+      const n=cyc*res;let d='',prev=null;
+      for(let k=0;k<n;k++){
+        const v=g.v[k],x=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x+'" y="'+yh+'" width="'+sw+'" height="'+(yl-yh)+'"/>';prev=null;continue;}
+        const y=Y(v);
+        if(prev===null){d+=' M'+x+','+y;}else if(y!==prev){d+=' L'+x+','+prev+' L'+x+','+y;}
+        prev=y;
+        if(k===n-1||g.v[k+1]===null||g.v[k+1]===undefined)d+=' L'+(x+sw)+','+y;
+      }
+      const col=g.col?' style="stroke:'+g.col+'"':'';
+      if(d)s+='<path class="wb"'+col+' d="'+d+'"/>';
+    }else if(g.t==='v'){
+      const n=cyc*res;let k0=0;
+      for(let k=1;k<=n;k++){
+        if(k<n&&g.v[k]===g.v[k0]&&!(g.sep&&g.v[k]!=='-'&&g.v[k]!==null))continue;
+        const v=g.v[k0],x0=lw+k0*sw,x1=lw+k*sw;
+        if(v===null||v===undefined){s+='<rect class="wx" x="'+x0+'" y="'+yh+'" width="'+(x1-x0)+'" height="'+(yl-yh)+'"/>';}
+        else if(v==='-'){s+='<line x1="'+x0+'" y1="'+ym+'" x2="'+x1+'" y2="'+ym+'" class="wc"/>';}
+        else{
+          const e=Math.min(4,(x1-x0)/3);
+          const st=g.col?' style="stroke:'+g.col(v)+'"':'';
+          s+='<path class="wbus"'+st+' d="M'+x0+','+ym+' L'+(x0+e)+','+yh+' L'+(x1-e)+','+yh+' L'+x1+','+ym+' L'+(x1-e)+','+yl+' L'+(x0+e)+','+yl+' Z"/>';
+          const t=g.f?g.f(v):String(v);
+          if(t.length*7.3<x1-x0-6)s+='<text x="'+((x0+x1)/2)+'" y="'+(ym+4)+'" text-anchor="middle">'+esc(t)+'</text>';
+        }
+        k0=k;
+      }
+    }else if(g.t==='m'){
+      for(let c=0;c<cyc;c++){const v=g.v[c];if(v)s+='<text x="'+(lw+c*cw+cw/2)+'" y="'+(ym+4)+'" text-anchor="middle" style="fill:'+(g.c||'var(--ok)')+'">'+esc(v)+'</text>';}
+    }
+  });
+  if(o.axis!==false){const a0=o.axis0||0;for(let c=0;c<cyc;c++)s+='<text class="wax" x="'+(lw+c*cw+cw/2)+'" y="'+(H-3)+'">'+(c+a0)+'</text>';}
+  s+=(o.extra||'')+'</svg>';
+  return s;
+}
+
+function quiz(host,items){
+  host.innerHTML=items.map((it,i)=>'<div class="q"><div class="qt">'+(i+1)+'. '+it.q+'</div><div class="opts">'+it.o.map((t,j)=>'<button class="opt" data-q="'+i+'" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="ex" hidden></div></div>').join('');
+  host.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;
+    const i=+b.dataset.q,j=+b.dataset.j,it=items[i],q=b.closest('.q'),ex=$('.ex',q);
+    $$('.opt',q).forEach(x=>x.classList.remove('right','wrong'));
+    const ok=j===it.a;b.classList.add(ok?'right':'wrong');
+    ex.hidden=false;ex.innerHTML=ok?it.e:'아닙니다. 다른 보기를 골라 보세요.';
+  });
+}
+document.addEventListener('DOMContentLoaded',()=>{$$('pre.code:not([data-manual])').forEach(p=>{p.innerHTML=codeLines(p.textContent);});});
+</script>
+</head><body>
+<div class="bar"><div class="bar-in"><a class="series" href="index.html">RTL과 HLS 입문</a><span class="here">6장</span><span class="dots" aria-label="12장 중 6장"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span></div></div>
+<header class="hero"><svg class="wave" viewBox="0 0 980 64" aria-hidden="true"><line x1="0.0" y1="0" x2="0.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="61.2" y1="0" x2="61.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="122.5" y1="0" x2="122.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="183.8" y1="0" x2="183.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="245.0" y1="0" x2="245.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="306.2" y1="0" x2="306.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="367.5" y1="0" x2="367.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="428.8" y1="0" x2="428.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="490.0" y1="0" x2="490.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="551.2" y1="0" x2="551.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="612.5" y1="0" x2="612.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="673.8" y1="0" x2="673.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="735.0" y1="0" x2="735.0" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="796.2" y1="0" x2="796.2" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="857.5" y1="0" x2="857.5" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="918.8" y1="0" x2="918.8" y2="64" stroke="var(--grid)" stroke-width="1"/><line x1="980.0" y1="0" x2="980.0" y2="64" stroke="var(--grid)" stroke-width="1"/><path d="M0,24 L0.0,24 L0.0,6 L30.6,6 L30.6,24 L61.2,24 L61.2,6 L91.9,6 L91.9,24 L122.5,24 L122.5,6 L153.1,6 L153.1,24 L183.8,24 L183.8,6 L214.4,6 L214.4,24 L245.0,24 L245.0,6 L275.6,6 L275.6,24 L306.2,24 L306.2,6 L336.9,6 L336.9,24 L367.5,24 L367.5,6 L398.1,6 L398.1,24 L428.8,24 L428.8,6 L459.4,6 L459.4,24 L490.0,24 L490.0,6 L520.6,6 L520.6,24 L551.2,24 L551.2,6 L581.9,6 L581.9,24 L612.5,24 L612.5,6 L643.1,6 L643.1,24 L673.8,24 L673.8,6 L704.4,6 L704.4,24 L735.0,24 L735.0,6 L765.6,6 L765.6,24 L796.2,24 L796.2,6 L826.9,6 L826.9,24 L857.5,24 L857.5,6 L888.1,6 L888.1,24 L918.8,24 L918.8,6 L949.4,6 L949.4,24 L980.0,24" style="stroke:var(--ink2);stroke-width:1.4"/><path d="M0,58 L59.2,58 L63.2,40 L120.5,40 L124.5,58 L304.2,58 L308.2,40 L488.0,40 L492.0,58 L549.2,58 L553.2,40 L610.5,40 L614.5,58 L794.2,58 L798.2,40 L980.0,40" style="stroke:var(--trace)"/></svg><div class="num">6장</div><h1>HLS: C가 회로가 되는 과정</h1><p class="lede">식을 직접 입력하고 목표 클럭을 정해 DFG, 스케줄링, 체이닝, 바인딩을 거쳐 FSM과 데이터패스가 만들어지는 과정을 봅니다.</p></header>
+<main>
+<div class="prose">
+<h2><span class="sec">6.1</span>HLS가 하는 일</h2>
+<p>3장에서 최대공약수 C 코드를 보고 레지스터, 감산기, 컨트롤러 상태를 손으로 뽑아냈습니다. <b>HLS</b>(High-Level Synthesis)는 이 일을 도구가 대신 하는 것입니다. C/C++ 함수를 받아서 FSM 컨트롤러와 데이터패스로 이루어진 RTL을 만들어 줍니다.</p>
+<p>도구 안에서는 대략 다음 순서로 일이 진행됩니다.</p>
+<ol>
+<li><b>파싱</b>: 코드를 연산과 데이터 의존성의 그래프(DFG, Data Flow Graph)로 바꿉니다.</li>
+<li><b>스케줄링</b>: 각 연산을 몇 번째 사이클에 할지 정합니다.</li>
+<li><b>할당</b>: 곱셈기, 덧셈기를 몇 개 만들지 정합니다.</li>
+<li><b>바인딩</b>: 각 연산을 어느 연산기에서 할지, 중간 값을 어느 레지스터에 둘지 정합니다.</li>
+<li><b>RTL 생성</b>: 사이클 하나가 FSM 상태 하나가 되고, 연산기 입력 앞에는 MUX가 붙습니다.</li>
+</ol>
+<p>실제 HLS 도구는 브라우저에서 돌릴 수 없으니, 이 장에서는 같은 원리로 동작하는 작은 장난감 HLS를 씁니다. 곱셈기의 지연은 3.2 ns, 덧셈/뺄셈기(ALU)는 1.1 ns, 레지스터 비용(t<sub>cq</sub>+t<sub>su</sub>)은 0.5 ns로 둡니다. 실제 도구처럼 <b>목표 클럭 주기</b>를 정하면, 한 주기 안에 들어가는 연산들은 같은 사이클에 이어 붙이고(체이닝), 한 주기보다 긴 연산은 여러 사이클에 걸쳐 합니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-1</b><span>장난감 HLS: 식 하나를 회로로</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b>곱셈 3.2 ns, ALU(덧셈·뺄셈) 1.1 ns, 레지스터 비용 0.5 ns. 곱셈기는 파이프라인되지 않은 연산기로 봅니다.</p>
+<label class="lbl" for="hexpr">식 (변수, 숫자, + − * 괄호)</label>
+<input type="text" id="hexpr" value="y = (a*b + c*d) * (e + f) - g*h" spellcheck="false" autocomplete="off">
+<div class="ctrl" id="hpre">
+<button data-e="y = (a*b + c*d) * (e + f) - g*h">예제 식</button>
+<button data-e="y = a*x*x*x + b*x*x + c*x + d">다항식 그대로</button>
+<button data-e="y = ((a*x + b)*x + c)*x + d">호너 방식</button>
+<button data-e="y = a + b + c + d + e + f + g + h">8개 합 (줄줄이)</button>
+<button data-e="y = ((a + b) + (c + d)) + ((e + f) + (g + h))">8개 합 (트리)</button>
+</div>
+<label class="sl"><span>곱셈기 개수</span><input type="range" id="hm" min="1" max="4" value="1"><output id="hmv"></output></label>
+<label class="sl"><span>ALU 개수</span><input type="range" id="ha" min="1" max="4" value="1"><output id="hav"></output></label>
+<label class="sl"><span>목표 클럭 주기</span><input type="range" id="ht" min="2" max="10" step="0.5" value="4"><output id="htv"></output></label>
+<p class="msg bad" id="herr" hidden></p>
+<div class="sub">1단계. 파싱 결과: DFG</div>
+<p class="hint">동그라미는 연산, 위에서 아래로 데이터가 흐릅니다. 색은 아래 스케줄에서 그 연산이 시작하는 사이클입니다.</p>
+<div class="scroll" id="hdfg"></div>
+<div class="sub">2~4단계. 스케줄링과 바인딩</div>
+<p class="hint">가로는 연산기, 세로는 사이클입니다. 같은 칸에 연산이 겹치지 않도록, 의존하는 값이 준비된 연산 중 남은 경로가 긴 것부터 배치합니다(리스트 스케줄링). 연산 칸의 ns는 그 사이클 안에서 언제 시작해 언제 끝나는지이고, 오른쪽 막대는 그 사이클에 쓴 시간입니다.</p>
+<div class="scroll" id="hsch"></div>
+<div class="stats" id="hstats"></div>
+<p class="msg" id="hmsg"></p>
+<div class="sub">목표 클럭을 바꾸면 (현재 연산기 개수 기준)</div>
+<div class="scroll"><svg id="htc" class="sch" viewBox="0 0 560 204" role="img" aria-label="목표 클럭과 총 시간"></svg></div>
+<div class="sub">설계 공간: 연산기 개수 16가지 조합 (현재 목표 클럭 기준)</div>
+<div class="scroll"><svg id="hds" class="sch" viewBox="0 0 560 230" role="img" aria-label="latency와 면적 산점도"></svg></div>
+<div class="sub">5단계. 생성된 컨트롤러 (스케치)</div>
+<pre class="code" id="hrtl" data-manual></pre>
+</div>
+</figure>
+
+<div class="prose">
+<p>목표 클럭 주기를 바꿔 보세요. 주기를 늘리면 한 사이클에 연산을 더 많이 이어 붙여 사이클 수는 줄지만, 사이클 하나가 길어져서 총 시간은 오히려 늘 수 있습니다. 주기를 줄이면 곱셈이 여러 사이클로 쪼개지고 레지스터 비용이 자주 붙습니다. 2장에서 손으로 따졌던 setup 조건을 HLS 도구가 스케줄링 단계에서 대신 따지는 것입니다. 실제 HLS 도구에서도 <code>create_clock</code>으로 정하는 목표 주기가 결과를 크게 바꿉니다.</p>
+<p>“다항식 그대로”와 “호너 방식”을 비교해 보세요. 호너 방식은 곱셈이 3개뿐이라 곱셈기 하나로도 빠르지만, 모든 연산이 앞 결과를 기다리는 사슬이라 곱셈기를 아무리 늘려도 더 빨라지지 않습니다. 8개 합도 마찬가지입니다. 수학적으로 같은 식이라도 <b>어떻게 썼느냐가 병렬성을 정합니다</b>. HLS 도구는 정수 덧셈 정도는 알아서 재배열하기도 하지만, 부동소수점은 결과가 달라질 수 있어 함부로 바꾸지 않습니다.</p>
+
+<h2><span class="sec">6.2</span>연산기 자체도 파이프라인된다</h2>
+<p>6.1의 장난감 HLS에서 곱셈기는 계산하는 동안 통째로 붙잡혀서, 곱셈이 3사이클이면 다음 곱셈은 3사이클 뒤에야 시작할 수 있었습니다. 실제 HLS 도구가 쓰는 연산기는 대부분 내부에 파이프라인 레지스터가 있습니다(4장). 지연이 3사이클이어도 <b>매 사이클 새 입력을 받을 수 있는</b> 연산기입니다. FPGA의 DSP 블록도 안에 레지스터 단이 있어서, 지연을 몇 사이클 주면 더 빠른 클럭에서 매 사이클 곱셈을 해냅니다.</p>
+<p>그래서 실제 도구에서는 “곱셈기 하나를 여러 곱셈이 나눠 쓴다”가 훨씬 싸게 먹힙니다. 연산기의 성질을 두 숫자로 기억하세요. <b>latency</b>(결과가 나오기까지)와 <b>II</b>(다음 입력을 받기까지)입니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-2</b><span>곱셈 네 번을 곱셈기 하나로</span></figcaption>
+<div class="body">
+<p class="hint"><code>y = a*b + c*d + e*f + g*h</code>를 곱셈기와 덧셈기 하나씩으로 계산합니다. 덧셈은 1사이클입니다.</p>
+<div class="ctrl"><span class="lbl">곱셈기</span><div class="seg" id="pu_k"><button data-v="np" aria-pressed="true">파이프라인 없음</button><button data-v="pp" aria-pressed="false">파이프라인됨 (II=1)</button></div></div>
+<label class="sl"><span>곱셈기 latency</span><input type="range" id="pu_l" min="1" max="5" value="3"><output id="pu_lv"></output></label>
+<div class="scroll" id="pusvg"></div>
+<div class="stats" id="pustats"></div>
+<p class="msg" id="pumsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">6.3</span>FPGA 자원 지도</h2>
+<p>위 실험의 면적은 상대값이었습니다. 실제 HLS 도구는 합성 결과를 FPGA 자원 네 가지의 개수로 알려 줍니다. 이 네 가지가 무엇이고 대략 얼마나 있는지 알아야 리포트를 읽을 수 있습니다.</p>
+<table class="t">
+<tr><th>자원</th><th>하는 일</th><th>중간 크기 FPGA 한 개에</th></tr>
+<tr><td>LUT</td><td>6입력 논리 함수 하나. 덧셈, 비교, MUX, 작은 메모리(LUTRAM)도 여기로</td><td>수십만 개</td></tr>
+<tr><td>FF</td><td>1비트 레지스터. 파이프라인 단과 변수를 담음</td><td>LUT의 약 두 배</td></tr>
+<tr><td>DSP</td><td>곱셈기 + 덧셈기가 들어 있는 전용 블록. 18×27비트 정도 곱셈 한 번</td><td>수천 개</td></tr>
+<tr><td>BRAM</td><td>포트 2개짜리 블록 메모리. 한 개에 수 KB</td><td>수백~수천 개</td></tr>
+</table>
+<p>리포트에서 DSP가 모자라면 곱셈을 줄이거나 비트 폭을 줄이고(6.5), BRAM이 모자라면 배열을 줄이거나 다시 배치하고(8장), LUT와 FF가 많으면 MUX와 파이프라인 레지스터가 많은지 의심합니다. 어느 자원이든 80%를 넘기면 배치·배선이 어려워져 클럭이 떨어지는 경우가 많습니다.</p>
+
+<h2><span class="sec">6.4</span>if-else는 어떤 회로가 되나</h2>
+<p>6.1의 장난감 HLS는 분기 없는 식만 받았습니다. 실제 코드에는 <code>if</code>가 있습니다. HLS 도구가 분기를 다루는 방법은 크게 둘입니다. <b>양쪽을 다 계산하고 결과를 MUX로 고르거나</b>, <b>조건을 먼저 보고 FSM 상태를 나누는 것</b>입니다. 같은 코드라도 어느 쪽이 되느냐에 따라 자원과 latency가 달라집니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-3</b><span>분기 하나를 회로로 만드는 세 가지 방법</span></figcaption>
+<div class="body">
+<pre class="code">
+if (a &gt; b) y = a * c;
+else       y = b * d;
+</pre>
+<div class="ctrl"><span class="lbl">구현</span><div class="seg" id="br_k"><button data-v="spec" aria-pressed="true">둘 다 계산 후 고르기</button><button data-v="opmux" aria-pressed="false">입력을 먼저 고르기</button><button data-v="fsm" aria-pressed="false">상태로 나누기</button></div></div>
+<div class="ctrl"><button id="br_c" aria-pressed="true">a &gt; b = 참</button></div>
+<div class="scroll"><svg id="brsvg" class="sch" viewBox="0 0 560 200" role="img" aria-label="분기 구현 구조"></svg></div>
+<div class="stats" id="brstats"></div>
+<p class="msg" id="brmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<p>파이프라인 루프(II=1) 안의 <code>if</code>는 매 사이클 새 반복이 들어오므로 상태를 나눌 수 없고, 언제나 앞의 두 방법 중 하나가 됩니다. 그래서 파이프라인 루프 안의 분기는 “양쪽 다 하드웨어로 만들어진다”고 생각하는 것이 안전합니다. 7장에서 루프 안의 조건문을 밖으로 빼는 코드 재구성을 다시 봅니다.</p>
+
+<h2><span class="sec">6.5</span>비트 폭: int를 그대로 쓰지 말 것</h2>
+<p>C의 <code>int</code>는 32비트이고, HLS는 그대로 32비트 하드웨어를 만듭니다. 값이 0~1000 사이라면 10비트면 충분한데도 말입니다. HLS에는 비트 수를 직접 정하는 <b>임의 정밀도 타입</b>이 있습니다.</p>
+<pre class="code">
+#include &lt;ap_int.h&gt;
+ap_int&lt;12&gt;  a, b;        // 부호 있는 12비트
+ap_uint&lt;5&gt;  x;           // 부호 없는 5비트 (0~31)
+ap_int&lt;24&gt;  p = a * b;   // 12비트 × 12비트 = 24비트면 넘치지 않음
+ap_int&lt;25&gt;  y = p + c;   // 더하면 1비트 늘어남
+</pre>
+<p>소수점이 있는 값은 <code>ap_fixed</code>로 쓰며 10장에서 다룹니다. 12장의 미니 TPU가 8비트로 계산하는 이유도 여기에 있습니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-4</b><span>비트 폭과 자원</span></figcaption>
+<div class="body">
+<p class="assume"><b>가정</b><code>y = a * b + c</code> 하나를 만들 때의 대략적인 자원입니다(교육용 근사). 곱셈은 DSP 블록 하나가 18×27비트까지 처리한다고 봅니다.</p>
+<label class="sl"><span>a, b의 비트 수</span><input type="range" id="bw_n" min="2" max="32" value="12"><output id="bw_nv"></output></label>
+<div class="ctrl"><span class="lbl">곱셈기</span><div class="seg" id="bw_d"><button data-v="dsp" aria-pressed="true">DSP 사용</button><button data-v="lut" aria-pressed="false">LUT로만</button></div></div>
+<div class="scroll"><svg id="bwsvg" class="sch" viewBox="0 0 560 150" role="img" aria-label="비트 폭별 자원"></svg></div>
+<p class="msg" id="bwmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">6.6</span>스케줄링의 여유</h2>
+<p>6.1의 리스트 스케줄링은 “남은 경로가 긴 연산부터” 배치했습니다. 이 우선순위의 바탕에는 <b>여유(mobility)</b>라는 개념이 있습니다. 자원이 무한할 때 가장 일찍 시작할 수 있는 사이클(ASAP)과, 전체 latency를 늘리지 않으면서 가장 늦게 시작해도 되는 사이클(ALAP)의 차이입니다. 여유가 0인 연산은 크리티컬 패스 위에 있어 미룰 수 없고, 여유가 있는 연산은 미뤄서 다른 연산과 연산기를 나눠 쓸 수 있습니다.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-5</b><span>ASAP, ALAP, 여유</span></figcaption>
+<div class="body">
+<p class="hint"><code>y = (a*b + c*d) * (e+f) − (g+h)</code>, 연산 하나가 한 사이클이라고 봅니다.</p>
+<div class="ctrl"><span class="lbl">보기</span><div class="seg" id="mb_v"><button data-v="asap" aria-pressed="true">ASAP</button><button data-v="alap" aria-pressed="false">ALAP</button><button data-v="mob" aria-pressed="false">여유</button></div></div>
+<div class="scroll"><svg id="mbsvg" class="sch" viewBox="0 0 560 216" role="img" aria-label="ASAP ALAP 스케줄"></svg></div>
+<p class="msg" id="mbmsg"></p>
+</div>
+</figure>
+
+<div class="prose">
+<h2><span class="sec">6.7</span>함수 하나가 모듈 하나로</h2>
+<p>실제 코드는 식 하나보다 깁니다. 반복문, 배열, 함수 인자가 각각 어떤 하드웨어가 되는지 보겠습니다. 아래 코드의 줄이나 그림의 블록을 눌러 보세요.</p>
+</div>
+
+<figure class="fig">
+<figcaption class="cap"><b>실험 6-6</b><span>코드 한 줄이 어떤 하드웨어가 되나</span></figcaption>
+<div class="body">
+<div class="g2">
+<pre class="code" id="mcode" data-manual style="cursor:pointer"></pre>
+<div class="scroll"><svg id="msvg2" class="sch" style="min-width:420px" viewBox="0 0 560 250" role="img" aria-label="합성된 모듈 구조"></svg></div>
+</div>
+<p class="msg" id="mmsg2">코드 줄이나 그림의 블록을 눌러 보세요.</p>
+<div class="sub">지시어가 없을 때 반복 한 번의 대략적인 스케줄</div>
+<table class="t">
+<tr><th>사이클</th><th>하는 일</th></tr>
+<tr><td class="m">1</td><td>i로 a[i], b[i]의 주소를 메모리에 보냄</td></tr>
+<tr><td class="m">2</td><td>메모리에서 데이터가 나옴 (BRAM 읽기 지연 1사이클)</td></tr>
+<tr><td class="m">3</td><td>곱셈</td></tr>
+<tr><td class="m">4</td><td>s에 더하고, i를 1 늘리고, i &lt; 4 인지 검사</td></tr>
+</table>
+<p class="hint">반복 4번 × 약 4사이클 + 시작/끝 처리로 대략 18사이클 남짓입니다. 실제 숫자는 도구와 연산 지연에 따라 달라집니다. 7장에서 지시어로 이 숫자를 줄여 봅니다.</p>
+</div>
+</figure>
+
+<div class="prose">
+<div class="note"><b>3장, 4장과 연결</b>
+HLS가 만든 모듈은 3장의 FSMD 그 자체이고, 바깥과는 4장의 핸드셰이크와 같은 방식(ap_start를 받고 ap_done으로 끝을 알림)으로 대화합니다. HLS를 써도 RTL을 읽을 줄 알아야 하는 이유입니다. 도구가 만든 결과를 해석하고 고칠 수 있어야 하니까요.</div>
+
+<h3>인자는 어떤 포트가 되나</h3>
+<p>6.7의 실험에서 배열은 메모리 포트, 반환값은 출력 포트가 되었습니다. 실제 설계에서는 함수가 CPU나 다른 회로와 어떻게 연결될지에 따라 인터페이스를 지시어로 고릅니다.</p>
+<table class="t">
+<tr><th>C 코드</th><th>기본 하드웨어</th><th>다른 선택 (INTERFACE 지시어)</th></tr>
+<tr><td class="m">int x</td><td>입력 선</td><td>s_axilite: CPU가 레지스터에 써 주는 값</td></tr>
+<tr><td class="m">int a[N]</td><td>메모리 포트 (ap_memory, BRAM에 연결)</td><td>m_axi: 칩 밖 DRAM을 직접 읽고 쓰는 버스 마스터</td></tr>
+<tr><td class="m">hls::stream&lt;T&gt; s</td><td>FIFO 포트 (ap_fifo)</td><td>axis: AXI-Stream, 9장의 스트림을 칩 안팎으로</td></tr>
+<tr><td>함수 시작과 끝</td><td>ap_start / ap_done 핸드셰이크</td><td>ap_ctrl_none: 핸드셰이크 없이 늘 동작</td></tr>
+</table>
+<p>함수 안에서 부른 하위 함수는 보통 별도의 하위 모듈이 됩니다. 작은 함수는 도구가 부른 쪽에 녹여 넣기도 하는데(inline), INLINE 지시어로 직접 정할 수 있습니다. 녹여 넣으면 함수 경계를 넘어 최적화할 수 있고, 따로 두면 재사용이 쉽고 9장 DATAFLOW의 단계가 됩니다.</p>
+
+<h2><span class="sec">6.8</span>HLS 설계의 검증 흐름</h2>
+<p>3장에서 RTL 테스트벤치를 썼습니다. HLS에서는 같은 일을 C 코드로 합니다. 순서는 이렇습니다.</p>
+<ol>
+<li><b>C 시뮬레이션</b>: C 테스트벤치(main 함수)가 설계 함수를 부르고 정답과 비교합니다. 일반 프로그램처럼 몇 초면 끝나므로 알고리즘 오류는 여기서 거의 다 잡습니다.</li>
+<li><b>합성</b>: RTL을 만들고, latency, interval, 자원, 예상 클럭을 리포트로 봅니다.</li>
+<li><b>C/RTL co-simulation</b>: 같은 C 테스트벤치를 그대로 써서, 이번에는 만들어진 RTL을 시뮬레이션하고 결과를 비교합니다. 실제 사이클 수도 여기서 측정됩니다.</li>
+<li><b>구현</b>: 배치·배선 뒤 타이밍을 다시 확인합니다. 합성 때의 예상 클럭은 배선 지연(2장)을 다 알지 못합니다.</li>
+</ol>
+<p>C 시뮬레이션만 통과하고 co-simulation에서 틀리는 경우가 있습니다. 8장의 DEPENDENCE처럼 사실과 다른 약속을 한 지시어, 초기화하지 않은 변수, 크기를 넘는 배열 접근처럼 C에서는 우연히 맞던 코드가 대표적입니다. 그래서 co-simulation은 빼먹지 않습니다.</p>
+
+<div class="real"><b>실제 도구에서는</b>실제 HLS 도구는 대상 FPGA와 목표 클럭에 맞춘 연산 지연 표로 스케줄링하고, 클럭 여유분(clock uncertainty)을 빼고 계산합니다. 리포트에는 연산이 몇 번째 상태에서 실행되는지와 LUT·FF·DSP·BRAM 개수가 나옵니다. 장난감 HLS의 면적 상대값과 일대일로 대응하지는 않습니다.</div>
+<div class="recap"><b>이 장의 요점</b><ul><li>HLS는 파싱(DFG) → 스케줄링 → 할당 → 바인딩 → RTL 생성 순으로 일합니다.</li><li>목표 클럭이 체이닝과 사이클 수를 바꿉니다. 사이클 수와 총 시간은 다릅니다.</li><li>파이프라인 안의 분기는 양쪽 다 하드웨어가 됩니다. 비트 폭을 줄이면 모든 자원이 줄어듭니다.</li><li>C 시뮬레이션 → 합성 → C/RTL co-simulation → 구현 순으로 검증합니다.</li></ul><p class="book"><b>책에서 이어 읽기</b> 1.1 High-level Synthesis, 1.4 Design Optimization, 2.3 Base FIR Architecture, 2.5 Operation Chaining, 2.10 Bitwidth Optimization, 6.5 C/RTL Cosimulation</p></div>
+<h2><span class="sec">6.9</span>확인 문제</h2>
+<div id="quiz"></div>
+</div>
+
+<script>
+function parseExpr(src){
+  let s=src.trim().replace(/;\s*$/,'');const m=s.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*/);const out=m?m[1]:'y';if(m)s=s.slice(m[0].length);
+  const toks=s.match(/[A-Za-z_]\w*|\d+|[+\-*()]/g)||[];
+  if(toks.join('')!==s.replace(/\s+/g,''))throw new Error('쓸 수 없는 문자가 있습니다. 변수, 숫자, + − * ( ) 만 쓸 수 있어요.');
+  let i=0;const nodes=[],leaves=new Map();
+  const peek=()=>toks[i];
+  const leaf=n=>{if(!leaves.has(n)){nodes.push({id:nodes.length,op:'in',name:n,args:[]});leaves.set(n,nodes.length-1);}return leaves.get(n);};
+  const mk=(op,a,b)=>{nodes.push({id:nodes.length,op,args:[a,b]});return nodes.length-1;};
+  function factor(){const t=peek();if(t==='('){i++;const v=expr();if(peek()!==')')throw new Error('닫는 괄호가 없습니다.');i++;return v;}
+    if(t&&/^([A-Za-z_]\w*|\d+)$/.test(t)){i++;return leaf(t);}throw new Error('식이 올바르지 않습니다. '+(t?'“'+t+'” 근처를 확인하세요.':'식이 덜 끝났습니다.'));}
+  function term(){let v=factor();while(peek()==='*'){i++;v=mk('*',v,factor());}return v;}
+  function expr(){let v=term();while(peek()==='+'||peek()==='-'){const op=toks[i++];v=mk(op,v,term());}return v;}
+  if(!toks.length)throw new Error('식을 입력하세요.');
+  const root=expr();if(i<toks.length)throw new Error('식이 올바르지 않습니다. “'+toks[i]+'” 근처를 확인하세요.');
+  let k=1;nodes.forEach(n=>{if(n.op!=='in')n.name='t'+(k++);});
+  return {nodes,root,out};
+}
+const DM=3.2,DA=1.1,OV=0.5;
+function hlsSchedule(G,nM,nA,Tc){
+  const B=Tc-OV,ops=G.nodes.filter(n=>n.op!=='in'),isIn=a=>G.nodes[a].op==='in';
+  const dl=n=>n.op==='*'?DM:DA,ty=n=>n.op==='*'?'MUL':'ALU';
+  const lat=n=>dl(n)>B+1e-9?Math.ceil(dl(n)/B-1e-9):1;
+  const succ={};ops.forEach(n=>succ[n.id]=[]);ops.forEach(n=>n.args.forEach(a=>{if(!isIn(a))succ[a].push(n.id);}));
+  const prio={};const pr=id=>prio[id]!==undefined?prio[id]:(prio[id]=dl(G.nodes[id])+Math.max(0,...succ[id].map(pr)));ops.forEach(n=>pr(n.id));
+  const start={},endc={},soff={},eoff={},unit={},busy={MUL:[...Array(nM)].map(()=>new Set()),ALU:[...Array(nA)].map(()=>new Set())};
+  const avail=(a,t)=>{if(isIn(a))return 0;if(start[a]===undefined)return null;if(endc[a]<t)return 0;if(endc[a]===t&&lat(G.nodes[a])===1)return eoff[a];return null;};
+  let t=0,left=ops.length;
+  while(left>0&&t<500){
+    for(;;){
+      let best=null;
+      for(const n of ops){if(start[n.id]!==undefined)continue;
+        let o=0,ok=true;for(const a of n.args){const v=avail(a,t);if(v===null){ok=false;break;}o=Math.max(o,v);}
+        if(!ok)continue;const L=lat(n);
+        if(L>1&&o>0)continue;if(L===1&&o+dl(n)>B+1e-9)continue;
+        const T=ty(n),u=busy[T].findIndex(s=>{for(let k=0;k<L;k++)if(s.has(t+k))return false;return true;});
+        if(u<0)continue;
+        if(!best||prio[n.id]>prio[best.n.id])best={n,o,u,L,T};}
+      if(!best)break;
+      const {n,o,u,L,T}=best;start[n.id]=t;soff[n.id]=L===1?o:0;eoff[n.id]=L===1?o+dl(n):B;endc[n.id]=t+L-1;unit[n.id]=T+u;for(let k=0;k<L;k++)busy[T][u].add(t+k);left--;
+    }
+    t++;
+  }
+  const Lc=ops.length?Math.max(...ops.map(n=>endc[n.id]))+1:0;
+  const live=Array(Lc+1).fill(0);
+  ops.forEach(n=>{const last=n.id===G.root?Lc:Math.max(...succ[n.id].map(s=>start[s]));for(let b=endc[n.id];b<last;b++)live[b]++;});
+  const regs=Math.max(1,...live);
+  const ports={};ops.forEach(n=>{const u=unit[n.id];ports[u]=ports[u]||[new Set(),new Set()];n.args.forEach((a,j)=>ports[u][j].add(a));});
+  let mux=0;Object.values(ports).forEach(p=>p.forEach(s=>{if(s.size>1)mux+=s.size;}));
+  const used=Object.keys(ports),uM=used.filter(u=>u.startsWith('MUL')).length,uA=used.filter(u=>u.startsWith('ALU')).length;
+  const path=Array(Lc).fill(0);ops.forEach(n=>{for(let k=start[n.id];k<=endc[n.id];k++)path[k]=Math.max(path[k],k===endc[n.id]?eoff[n.id]:B);});
+  const chained=ops.some(n=>n.args.some(a=>!isIn(a)&&endc[a]===start[n.id]));
+  const mlat=lat({op:'*'});
+  return {ops,start,endc,soff,eoff,unit,L:Lc,lat,succ,regs,mux,uM,uA,area:uM*10+uA*2+regs+mux*0.5,used,path,B,chained,mlat};
+}
+(()=>{ // 실험 6-1
+  const sym={'*':'×','+':'+','-':'−'};
+  const pcol=c=>'var(--p'+(c%8)+')';
+  function draw(){
+    const nM=+$('#hm').value,nA=+$('#ha').value,Tc=+$('#ht').value;
+    $('#hmv').textContent=nM+'개';$('#hav').textContent=nA+'개';$('#htv').textContent=fx(Tc,1)+' ns';
+    let G;
+    try{G=parseExpr($('#hexpr').value);$('#herr').hidden=true;}catch(e){$('#herr').hidden=false;$('#herr').textContent=e.message;return;}
+    const S=hlsSchedule(G,nM,nA,Tc);
+    if(!S.ops.length){$('#herr').hidden=false;$('#herr').textContent='연산이 없습니다. 곱셈이나 덧셈이 들어간 식을 넣어 보세요.';return;}
+    // DFG
+    const lv={};G.nodes.forEach(n=>{lv[n.id]=n.op==='in'?0:1+Math.max(...n.args.map(a=>lv[a]));});
+    const maxL=Math.max(...Object.values(lv)),rows=[];for(let l=0;l<=maxL;l++)rows.push(G.nodes.filter(n=>lv[n.id]===l));
+    const maxN=Math.max(...rows.map(r=>r.length)),W=Math.max(320,maxN*64+40),pos={};
+    rows.forEach((r,l)=>{if(l>0)r.sort((x,y)=>{const m=n=>n.args.reduce((a,b)=>a+pos[b][0],0)/n.args.length;return m(x)-m(y);});
+      r.forEach((n,i)=>{pos[n.id]=[20+(i+0.5)*(W-40)/r.length,26+l*62];});});
+    const H=26+maxL*62+56;
+    let s='<svg class="sch" style="min-width:'+Math.min(W,500)+'px;max-width:'+W+'px" viewBox="0 0 '+W+' '+H+'">';
+    G.nodes.forEach(n=>n.args.forEach(a=>{const [x1,y1]=pos[a],[x2,y2]=pos[n.id];s+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" class="thin"/>';}));
+    const [rx,ry]=pos[G.root];s+='<line x1="'+rx+'" y1="'+ry+'" x2="'+rx+'" y2="'+(ry+40)+'" class="thin"/><text x="'+rx+'" y="'+(ry+52)+'" text-anchor="middle" class="m">'+esc(G.out)+'</text>';
+    G.nodes.forEach(n=>{const [x,y]=pos[n.id];
+      if(n.op==='in')s+='<circle cx="'+x+'" cy="'+y+'" r="15" style="fill:var(--sheet2);stroke:var(--ink2)"/><text x="'+x+'" y="'+(y+4)+'" text-anchor="middle" class="m" style="font-size:12px">'+esc(n.name.length>3?n.name.slice(0,3):n.name)+'</text>';
+      else s+='<circle cx="'+x+'" cy="'+y+'" r="17" style="fill:'+pcol(S.start[n.id])+'"/><text x="'+x+'" y="'+(y+5)+'" text-anchor="middle" style="fill:var(--onacc);font-size:16px;font-weight:600">'+sym[n.op]+'</text><text x="'+(x+21)+'" y="'+(y-10)+'" class="m dim" style="font-size:10.5px">'+n.name+'</text>';});
+    $('#hdfg').innerHTML=s+'</svg>';
+    // 스케줄 그리드
+    const cols=S.used.sort((a,b)=>a.localeCompare(b)),cw=112,rh=48,lx=44,ty=26,SW=lx+cols.length*cw+86,SH=ty+S.L*rh+8;
+    let g='<svg class="sch" style="min-width:'+Math.min(SW,420)+'px;max-width:'+SW+'px" viewBox="0 0 '+SW+' '+SH+'">';
+    g+='<defs><marker id="ah6c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker></defs>';
+    cols.forEach((c,i)=>{g+='<text x="'+(lx+i*cw+cw/2)+'" y="16" text-anchor="middle" class="m" style="font-size:12px;font-weight:500">'+c+'</text>';});
+    g+='<text x="'+(SW-6)+'" y="16" text-anchor="end" class="m dim" style="font-size:10.5px">쓴 시간</text>';
+    for(let r=0;r<S.L;r++){const y=ty+r*rh,full=S.path[r]/S.B;g+='<line x1="'+lx+'" y1="'+y+'" x2="'+(SW-8)+'" y2="'+y+'" style="stroke:var(--grid)"/><text x="'+(lx-8)+'" y="'+(y+30)+'" text-anchor="end" class="m dim" style="font-size:11.5px">C'+r+'</text>';
+      const bx=lx+cols.length*cw+8;g+='<rect x="'+bx+'" y="'+(y+22)+'" width="64" height="8" style="fill:var(--sheet2)"/><rect x="'+bx+'" y="'+(y+22)+'" width="'+(64*Math.min(1,full))+'" height="8" style="fill:'+(full>0.999?'var(--warn)':'var(--trace)')+'"/><text x="'+(bx+64)+'" y="'+(y+42)+'" text-anchor="end" class="m dim" style="font-size:9.5px">'+fx(S.path[r],1)+'/'+fx(S.B,1)+'</text>';}
+    const nm=a=>G.nodes[a].name,box={};
+    S.ops.forEach(n=>{const ci=cols.indexOf(S.unit[n.id]),L=S.lat(n),x=lx+ci*cw+6,y=ty+S.start[n.id]*rh+10,h=L*rh-14;box[n.id]=[x,y,x+cw-12,y+h];
+      let lab=n.name+'='+nm(n.args[0])+sym[n.op]+nm(n.args[1]);if(lab.length>14)lab=lab.slice(0,13)+'…';
+      g+='<rect x="'+x+'" y="'+y+'" width="'+(cw-12)+'" height="'+h+'" rx="4" style="fill:'+pcol(S.start[n.id])+'"/><text x="'+(x+(cw-12)/2)+'" y="'+(y+15)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:12px;font-weight:500">'+esc(lab)+'</text>'+
+        '<text x="'+(x+(cw-12)/2)+'" y="'+(y+28)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:9.5px;opacity:.85">'+(L===1?fx(S.soff[n.id],1)+'–'+fx(S.eoff[n.id],1)+'ns':L+'사이클')+'</text>';});
+    S.ops.forEach(n=>n.args.forEach(a=>{if(G.nodes[a].op==='in')return;const p=box[a],q=box[n.id];
+      if(S.endc[a]===S.start[n.id]){const x1=(p[0]+p[2])/2+4,x2=(q[0]+q[2])/2-4,yt=Math.min(p[1],q[1]),yy=yt-6;
+        g+='<path d="M'+x1+','+yt+' V'+yy+' H'+x2+' V'+(yt-1)+'" style="fill:none;stroke:var(--accent);stroke-width:2" marker-end="url(#ah6c)"/>';}
+      else{const x1=(p[0]+p[2])/2,x2=(q[0]+q[2])/2;g+='<path d="M'+x1+','+p[3]+' C'+x1+','+(p[3]+16)+' '+x2+','+(q[1]-16)+' '+x2+','+q[1]+'" style="fill:none;stroke:var(--ink);stroke-width:1.3;stroke-dasharray:3 3"/>';}}));
+    $('#hsch').innerHTML=g+'</svg>';
+    const U=hlsSchedule(G,99,99,Tc);
+    $('#hstats').innerHTML=[['목표 클럭',fx(Tc,1)+' ns ('+fx(1000/Tc,0)+' MHz)'],['latency',S.L+'사이클'],['총 시간',fx(S.L*Tc,1)+' ns'],['자원 무제한일 때',U.L+'사이클'],['쓴 연산기','곱셈 '+S.uM+', ALU '+S.uA],['레지스터',S.regs+'개'],['MUX 입력',S.mux+'개'],['면적(상대값)',fx(S.area,1)]]
+      .map(([k,v])=>'<div class="stat"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>').join('');
+    const msg=[];
+    if(S.mlat>1)msg.push('곱셈(3.2 ns)이 한 주기에 쓸 수 있는 '+fx(S.B,1)+' ns 안에 들어가지 않아서, 곱셈기가 '+S.mlat+'사이클 동안 붙잡힙니다.');
+    if(S.chained)msg.push('파란 화살표는 같은 사이클 안에서 앞 연산의 결과를 바로 받아 이어서 계산하는 체이닝입니다. 그 사이에는 레지스터가 없습니다.');
+    msg.push(S.L===U.L?'연산기를 더 늘려도 latency가 줄지 않습니다. 이제는 데이터 의존성과 목표 클럭이 속도를 정합니다.':'연산기가 부족해서 준비된 연산이 기다리는 사이클이 있습니다. 연산기를 늘리면 '+U.L+'사이클까지 줄 수 있습니다.');
+    $('#hmsg').innerHTML=msg.join(' ');
+    // 목표 클럭에 따른 변화
+    const TS=[];for(let v=2;v<=10.001;v+=0.5)TS.push(v);
+    const pts=TS.map(v=>{const r=hlsSchedule(G,nM,nA,v);return {T:v,L:r.L,ns:r.L*v};});
+    const nmax=Math.max(...pts.map(p=>p.ns))*1.12,X=v=>60+(v-2)/8*470,Y=v=>180-v/nmax*155;
+    let c='<path d="M60,20 V180 H530" class="thin"/><text x="530" y="174" text-anchor="end" class="dim" style="font-size:11px">목표 클럭 주기 (ns)</text><text x="66" y="26" class="dim" style="font-size:11px">총 시간 (ns), 점 위 숫자는 사이클 수</text>';
+    for(let v=2;v<=10;v+=2)c+='<text x="'+X(v)+'" y="196" text-anchor="middle" class="m dim" style="font-size:10.5px">'+v+'</text>';
+    c+='<polyline points="'+pts.map(p=>X(p.T)+','+Y(p.ns)).join(' ')+'" style="fill:none;stroke:var(--trace);stroke-width:1.6"/>';
+    pts.forEach(p=>{const on=Math.abs(p.T-Tc)<1e-6;c+='<circle cx="'+X(p.T)+'" cy="'+Y(p.ns)+'" r="'+(on?6:3)+'" style="fill:'+(on?'var(--accent)':'var(--trace)')+'"/><text x="'+X(p.T)+'" y="'+(Y(p.ns)-9)+'" text-anchor="middle" class="m" style="font-size:9.5px;'+(on?'fill:var(--accent);font-weight:600':'fill:var(--ink2)')+'">'+p.L+'</text>';});
+    $('#htc').innerHTML=c;
+    // 설계 공간
+    const dp=[];for(let m=1;m<=4;m++)for(let a=1;a<=4;a++){const r=hlsSchedule(G,m,a,Tc);dp.push({m,a,L:r.L,A:r.area});}
+    const Ls=dp.map(p=>p.L),As=dp.map(p=>p.A),l0=Math.min(...Ls)-1,l1=Math.max(...Ls)+1,a1=Math.max(...As)*1.15;
+    const DX=l=>70+(l-l0)/(l1-l0)*460,DY=a=>200-a/a1*180;
+    let d='<path d="M70,20 V200 H530" class="thin"/><text x="530" y="194" text-anchor="end" class="dim" style="font-size:11px">latency (사이클)</text><text x="76" y="26" class="dim" style="font-size:11px">면적</text>';
+    for(let l=Math.ceil(l0);l<=l1;l++)d+='<text x="'+DX(l)+'" y="216" text-anchor="middle" class="m dim" style="font-size:10.5px">'+l+'</text>';
+    const seen={};
+    dp.forEach(p=>{const on=p.m===nM&&p.a===nA,k=p.L+','+p.A;if(seen[k]&&!on)return;seen[k]=1;
+      d+='<circle cx="'+DX(p.L)+'" cy="'+DY(p.A)+'" r="'+(on?7:4.5)+'" style="fill:'+(on?'var(--accent)':'var(--sheet)')+';stroke:'+(on?'var(--accent)':'var(--ink2)')+'"><title>곱셈기 '+p.m+', ALU '+p.a+': '+p.L+'사이클, 면적 '+fx(p.A,1)+'</title></circle>';});
+    $('#hds').innerHTML=d;
+    // RTL 스케치
+    let r='// 목표 클럭 '+fx(Tc,1)+' ns. 상태 하나 = 사이클 하나\ncase (state)\n';
+    for(let c2=0;c2<S.L;c2++){
+      r+='  S'+c2+': begin\n';
+      S.ops.filter(n=>S.start[n.id]===c2).sort((x,y)=>S.soff[x.id]-S.soff[y.id]).forEach(n=>{const e=n.name+' <= '+nm(n.args[0])+' '+n.op+' '+nm(n.args[1])+';',L=S.lat(n),ch=n.args.some(a=>G.nodes[a].op!=='in'&&S.endc[a]===c2);
+        r+='    '+e.padEnd(18)+'// '+S.unit[n.id]+(L>1?', '+L+'사이클':'')+(ch?', 앞 연산에 이어서(체이닝)':'')+'\n';});
+      S.ops.filter(n=>S.start[n.id]<c2&&S.endc[n.id]>=c2).forEach(n=>{r+='    // '+S.unit[n.id]+': '+n.name+' 계산 중\n';});
+      r+='    state <= S'+(c2+1)+';\n  end\n';
+    }
+    r+='  S'+S.L+': begin\n    '+G.out+' <= '+G.nodes[G.root].name+';  done <= 1;  state <= IDLE;\n  end\nendcase';
+    $('#hrtl').innerHTML=codeLines(r);
+  }
+  onInput('hexpr',draw);onInput('hm',draw);onInput('ha',draw);onInput('ht',draw);
+  $('#hpre').addEventListener('click',e=>{const b=e.target.closest('button');if(b){$('#hexpr').value=b.dataset.e;draw();}});
+  draw();
+})();
+
+(()=>{ // 실험 6-6
+  const SRC='int mac4(int a[4], int b[4]) {\n  int s = 0;\n  for (int i = 0; i < 4; i++)\n    s += a[i] * b[i];\n  return s;\n}';
+  const LK=['iface','s','loop','mac','ret','iface'];
+  const EX={
+    iface:'함수 하나가 모듈 하나가 됩니다. 시작과 끝을 알리는 핸드셰이크 포트(ap_start, ap_done, ap_idle, ap_ready)가 자동으로 붙습니다. 배열 인자 a, b는 값이 아니라 <b>메모리 포트</b>(주소, 읽기 enable, 데이터)가 됩니다.',
+    s:'지역 변수 s는 반복하는 동안 값을 기억해야 하므로 <b>레지스터</b>가 됩니다. <code>= 0</code>은 루프에 들어가기 전 상태에서 이 레지스터를 지우는 동작이 됩니다.',
+    loop:'for 루프는 <b>카운터 레지스터 i</b>, 비교기(i &lt; 4), 그리고 컨트롤러 FSM의 반복 상태가 됩니다. 3장의 GCD 컨트롤러가 CALC에 머문 것과 같은 구조입니다.',
+    mac:'a[i], b[i] 읽기는 메모리에 주소를 보내고 다음 사이클에 데이터를 받는 동작이 됩니다. <code>*</code>는 곱셈기, <code>+=</code>는 덧셈기와 s 레지스터로 돌아가는 피드백 경로가 됩니다.',
+    ret:'return 값은 출력 포트 ap_return이 되고, ap_done이 1인 사이클에 유효합니다.'};
+  const B=[
+    {p:'iface',k:['iface'],x:8,y:12,w:124,h:40,t:'ap_start / ap_done'},
+    {p:'loop',k:['iface','loop'],x:200,y:12,w:160,h:40,t:'FSM 컨트롤러'},
+    {p:'mac',k:['iface','mac'],x:8,y:96,w:96,h:40,t:'메모리 a'},
+    {p:'mac',k:['iface','mac'],x:8,y:170,w:96,h:40,t:'메모리 b'},
+    {p:'loop',k:['loop'],x:200,y:86,w:120,h:36,t:'i 카운터, i<4'},
+    {p:'mac',k:['mac'],x:160,y:150,w:56,h:44,t:'×'},
+    {p:'mac',k:['mac'],x:262,y:150,w:56,h:44,t:'+'},
+    {p:'s',k:['s','mac'],x:360,y:150,w:84,h:44,t:'s 레지스터'},
+    {p:'ret',k:['ret'],x:476,y:150,w:76,h:44,t:'ap_return'}];
+  let cur=null;
+  function draw(){
+    const lines=LK.map((k,i)=>k===cur?i:-1).filter(i=>i>=0);
+    $('#mcode').innerHTML=codeLines(SRC,lines);
+    let s='<defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--ink2)"/></marker></defs>';
+    s+='<path d="M104 116 H140 V164 H160 M104 190 H140 V180 H160 M216 172 H262 M318 172 H360 M444 172 H476" class="thin" marker-end="url(#ah6)"/>';
+    s+='<path d="M402 194 V218 H290 V194" class="thin" marker-end="url(#ah6)"/>';
+    s+='<path d="M200 104 H120 V116 M120 104 V190" class="thin" style="stroke-dasharray:4 3"/><text x="150" y="98" class="m dim" style="font-size:10.5px">주소</text>';
+    s+='<path d="M132 32 H200 M280 52 V86" class="thin" style="stroke-dasharray:4 3"/>';
+    B.forEach((b,i)=>{const on=cur&&b.k.includes(cur);
+      s+='<g class="blk" data-i="'+i+'" style="cursor:pointer"><rect x="'+b.x+'" y="'+b.y+'" width="'+b.w+'" height="'+b.h+'" rx="3" class="box" style="'+(on?'fill:var(--accent-soft);stroke:var(--accent);stroke-width:2.4':'')+'"/><text x="'+(b.x+b.w/2)+'" y="'+(b.y+b.h/2+5)+'" text-anchor="middle" style="font-size:'+(b.t.length<3?20:12.5)+'px;'+(on?'fill:var(--accent);font-weight:600':'')+'">'+esc(b.t)+'</text></g>';});
+    $('#msvg2').innerHTML=s;
+    if(cur)$('#mmsg2').innerHTML=EX[cur];
+  }
+  $('#mcode').addEventListener('click',e=>{const l=e.target.closest('.ln');if(l){cur=LK[+l.dataset.i];draw();}});
+  $('#msvg2').addEventListener('click',e=>{const g=e.target.closest('.blk');if(g){cur=B[+g.dataset.i].p;draw();}});
+  draw();
+})();
+
+(()=>{ // 실험 6-2
+  let k='np';segBind('pu_k',v=>{k=v;draw();});onInput('pu_l',draw);
+  function draw(){
+    const L=+$('#pu_l').value;$('#pu_lv').textContent=L+'사이클';
+    const ops=[];let free=0;
+    for(let i=0;i<4;i++){const s=free;ops.push({n:['a×b','c×d','e×f','g×h'][i],s,e:s+L,u:'MUL'});free=k==='np'?s+L:s+1;}
+    let alu=0;const add=(n,a,b)=>{const s=Math.max(a.e,b.e,alu);const o={n,s,e:s+1,u:'ALU'};alu=s+1;ops.push(o);return o;};
+    const s1=add('t1+t2',ops[0],ops[1]),s2=add('t3+t4',ops[2],ops[3]),y=add('y',s1,s2);
+    const npEnd=(()=>{let f=0,o=[];for(let i=0;i<4;i++){o.push(f+L);f+=L;}let al=0;const ad=(x,z)=>{const st=Math.max(x,z,al);al=st+1;return st+1;};const a1=ad(o[0],o[1]),a2=ad(o[2],o[3]);return ad(a1,a2);})();
+    const end=y.e,cw=Math.max(18,Math.min(40,480/end)),lw=60,W=lw+end*cw+10,H=ops.length*24+30;
+    let s='<svg class="sch" style="min-width:'+Math.min(W,420)+'px;max-width:'+W+'px" viewBox="0 0 '+W+' '+H+'">';
+    for(let t=0;t<=end;t++)s+='<line x1="'+(lw+t*cw)+'" y1="4" x2="'+(lw+t*cw)+'" y2="'+(ops.length*24+6)+'" style="stroke:var(--grid)"/>'+(t<end?'<text x="'+(lw+t*cw+cw/2)+'" y="'+(H-6)+'" text-anchor="middle" class="m dim" style="font-size:10px">'+t+'</text>':'');
+    ops.forEach((o,i)=>{const y0=6+i*24;s+='<text x="'+(lw-6)+'" y="'+(y0+15)+'" text-anchor="end" class="m dim" style="font-size:11px">'+o.n+'</text>';
+      if(o.u==='MUL'&&k==='pp')for(let j=0;j<L;j++)s+='<rect x="'+(lw+(o.s+j)*cw+1)+'" y="'+(y0+2)+'" width="'+(cw-2)+'" height="18" rx="2" style="fill:var(--p1);opacity:'+(1-j*0.15)+'"/><text x="'+(lw+(o.s+j)*cw+cw/2)+'" y="'+(y0+15)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:9px">'+(j+1)+'단</text>';
+      else s+='<rect x="'+(lw+o.s*cw+1)+'" y="'+(y0+2)+'" width="'+((o.e-o.s)*cw-2)+'" height="18" rx="2" style="fill:'+(o.u==='MUL'?'var(--p1)':'var(--p2)')+'"/>';});
+    $('#pusvg').innerHTML=s+'</svg>';
+    $('#pustats').innerHTML=[['latency',end+'사이클'],['곱셈기',(k==='pp'?'파이프라인 ':'')+'1개'],['곱셈기가 새 입력을 받는 간격',(k==='pp'?1:L)+'사이클']].map(([a,b])=>'<div class="stat"><span class="k">'+a+'</span><span class="v">'+b+'</span></div>').join('');
+    $('#pumsg').innerHTML=k==='np'?'곱셈기가 '+L+'사이클 동안 한 곱셈에 붙잡혀 있어, 네 곱셈이 줄줄이 기다립니다. 곱셈기를 늘리지 않으면 빨라지지 않습니다.':'곱셈기 하나가 매 사이클 새 곱셈을 받아 들입니다. 곱셈 네 번이 '+(L+3)+'사이클 안에 끝나므로, 연산기를 늘리지 않고도 '+npEnd+'사이클 → '+end+'사이클로 줄었습니다. 실제 HLS의 연산기 대부분이 이런 모양입니다.';
+  }
+  draw();
+})();
+
+(()=>{ // 실험 6-3
+  let k='spec',cond=1;const DM=3.2,DC=0.8,DX=0.3,B=3.5;
+  segBind('br_k',v=>{k=v;draw();});$('#br_c').onclick=()=>{cond^=1;draw();};
+  function draw(){
+    $('#br_c').textContent='a > b = '+(cond?'참':'거짓');$('#br_c').setAttribute('aria-pressed',cond?'true':'false');
+    const on=v=>v?'var(--accent)':'var(--lo)';let s='',st,m;
+    const box=(x,y,w,h,t,act)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="3" style="fill:'+(act?'var(--accent-soft)':'var(--sheet)')+';stroke:'+(act?'var(--accent)':'var(--ink)')+';stroke-width:'+(act?2.2:1.3)+'"/><text x="'+(x+w/2)+'" y="'+(y+h/2+5)+'" text-anchor="middle" class="m" style="font-size:12px">'+t+'</text>';
+    const mux=(x,y)=>'<path d="M'+x+' '+y+' L'+(x+24)+' '+(y+10)+' L'+(x+24)+' '+(y+40)+' L'+x+' '+(y+50)+' Z" class="box"/>';
+    const W=(d,a)=>'<path d="'+d+'" class="wire" style="stroke:'+on(a)+';stroke-width:'+(a?2.4:1.5)+'"/>';
+    const L=(x,y,t)=>'<text x="'+x+'" y="'+y+'" class="m" style="font-size:12px">'+t+'</text>';
+    if(k==='spec'){
+      s+=L(8,44,'a,c')+L(8,124,'b,d')+W('M40 40 H110',cond)+W('M40 120 H110',!cond)+box(110,22,70,36,'a × c',cond)+box(110,102,70,36,'b × d',!cond);
+      s+=W('M180 40 H230 V60 H260',cond)+W('M180 120 H230 V100 H260',!cond)+mux(260,55)+W('M284 80 H330',true)+L(338,84,'y');
+      s+=box(110,160,70,30,'a > b',true)+W('M180 175 H272 V101',true);
+      st=[['곱셈기','2개'],['MUX','1개'],['경로 지연',fx(Math.max(DM,DC)+DX,1)+' ns'],['latency','1사이클']];
+      m='두 곱셈을 동시에 해 두고 비교 결과로 고릅니다. 가장 빠르지만 곱셈기가 두 개 들고, 한쪽 결과는 버려집니다. 목표 클럭 4 ns(쓸 수 있는 시간 3.5 ns) 안에 들어갑니다.';
+    }else if(k==='opmux'){
+      s+=L(8,44,'a / b')+L(8,124,'c / d')+mux(60,15)+mux(60,95)+W('M30 40 H60',true)+W('M30 120 H60',true);
+      s+=W('M84 40 H130 V62 H160',true)+W('M84 120 H130 V98 H160',true)+box(160,62,80,36,(cond?'a':'b')+' × '+(cond?'c':'d'),true)+W('M240 80 H330',true)+L(338,84,'y');
+      s+=box(10,160,70,30,'a > b',true)+W('M80 175 H100 V160 M72 66 V160 M72 146 V160',true);
+      s+='<rect x="120" y="50" width="4" height="62" style="fill:var(--warn)"/><text x="100" y="128" class="m" style="font-size:10px;fill:var(--warn)">레지스터</text>';
+      st=[['곱셈기','1개'],['MUX','2개'],['경로 지연',fx(DC+DX+DM,1)+' ns → 2단'],['latency','2사이클']];
+      m='비교 결과로 입력을 먼저 고른 뒤 곱셈을 한 번만 합니다. 곱셈기는 하나로 줄지만 비교, MUX, 곱셈이 한 줄로 이어져 '+fx(DC+DX+DM,1)+' ns가 되므로, 3.5 ns에 맞추려면 중간에 레지스터가 들어가 2사이클이 됩니다.';
+    }else{
+      s+=box(20,20,100,40,'S0: a > b ?',true)+'<path d="M120 40 H170" class="thin"/><text x="140" y="34" class="m dim" style="font-size:10px">참</text><path d="M70 60 V120 H170" class="thin"/><text x="76" y="104" class="m dim" style="font-size:10px">거짓</text>';
+      s+=box(170,22,120,36,'S1: y = a × c',cond)+box(170,102,120,36,'S2: y = b × d',!cond)+'<path d="M290 40 H340 V80 H360 M290 120 H340 V80" class="thin"/>'+box(360,62,90,36,'곱셈기 1개',true);
+      st=[['곱셈기','1개 (두 상태가 나눠 씀)'],['MUX','1개'],['상태','3개'],['latency','2사이클']];
+      m='첫 사이클에 조건을 보고, 다음 사이클에 고른 쪽만 계산합니다. 두 곱셈은 다른 상태에서 일어나므로 곱셈기 하나를 나눠 씁니다. 대신 매 사이클 새 입력을 받는 파이프라인에는 쓸 수 없습니다.';
+    }
+    $('#brsvg').innerHTML=s;$('#brstats').innerHTML=st.map(([a,b])=>'<div class="stat"><span class="k">'+a+'</span><span class="v">'+b+'</span></div>').join('');$('#brmsg').innerHTML=m;
+  }
+  draw();
+})();
+
+(()=>{ // 실험 6-4
+  let dsp='dsp';segBind('bw_d',v=>{dsp=v;draw();});onInput('bw_n',draw);
+  const est=(n,d)=>{const add=2*n+1,mulD=Math.ceil(n/18)*Math.ceil(n/27),mulL=Math.ceil(n*n*0.55),ff=2*n+2*n+1;return {lut:add+(d==='dsp'?0:mulL),dsp:d==='dsp'?mulD:0,ff,out:2*n+1};};
+  function draw(){
+    const n=+$('#bw_n').value;$('#bw_nv').textContent=n+'비트';
+    const a=est(n,dsp),b=est(32,dsp),mx={lut:Math.max(b.lut,a.lut,1),dsp:Math.max(b.dsp,a.dsp,1),ff:Math.max(b.ff,a.ff,1)};
+    let s='';const rows=[['LUT','lut'],['DSP','dsp'],['FF','ff']];
+    rows.forEach(([nm,k],i)=>{const y=14+i*40;s+='<text x="8" y="'+(y+22)+'" class="m" style="font-size:12px">'+nm+'</text>';
+      const w1=a[k]/mx[k]*360,w2=b[k]/mx[k]*360;
+      s+='<rect x="60" y="'+y+'" width="'+Math.max(1,w1)+'" height="14" style="fill:var(--trace)"/><text x="'+(66+w1)+'" y="'+(y+11)+'" class="m" style="font-size:10.5px">'+a[k]+' ('+n+'비트)</text>';
+      s+='<rect x="60" y="'+(y+17)+'" width="'+Math.max(1,w2)+'" height="14" style="fill:var(--lo)"/><text x="'+(66+w2)+'" y="'+(y+28)+'" class="m dim" style="font-size:10.5px">'+b[k]+' (int 32비트)</text>';});
+    s+='<text x="8" y="140" class="m dim" style="font-size:11px">결과 y는 '+a.out+'비트면 넘치지 않습니다 (곱 '+(2*n)+'비트 + 덧셈 1비트)</text>';
+    $('#bwsvg').innerHTML=s;
+    $('#bwmsg').innerHTML=(dsp==='dsp'?'32비트 곱셈은 DSP 블록 '+b.dsp+'개를 이어 붙여야 하지만, '+n+'비트는 '+a.dsp+'개면 됩니다. 18비트 이하는 DSP 하나에 들어갑니다.':'LUT로만 만든 곱셈기는 비트 수의 제곱에 비례해 커집니다. '+n+'비트는 32비트의 약 '+fx(100*a.lut/b.lut,0)+'%입니다.')+' 레지스터도 비트 수만큼 줄어듭니다.';
+  }
+  draw();
+})();
+
+(()=>{ // 실험 6-5
+  const OPS=[{n:'a×b',d:[]},{n:'c×d',d:[]},{n:'+',d:[0,1]},{n:'e+f',d:[]},{n:'×',d:[2,3]},{n:'g+h',d:[]},{n:'−',d:[4,5]}];
+  const asap=[],alap=[];OPS.forEach((o,i)=>{asap[i]=o.d.length?Math.max(...o.d.map(j=>asap[j]))+1:0;});
+  const L=Math.max(...asap)+1;for(let i=OPS.length-1;i>=0;i--){const su=OPS.map((o,j)=>o.d.includes(i)?j:-1).filter(j=>j>=0);alap[i]=su.length?Math.min(...su.map(j=>alap[j]))-1:L-1;}
+  let v='asap';segBind('mb_v',x=>{v=x;draw();});
+  function draw(){
+    const cw=66,rh=40,x0=70,y0=24;let s='';
+    OPS.forEach((o,i)=>{s+='<text x="'+(x0+i*cw+cw/2)+'" y="16" text-anchor="middle" class="m dim" style="font-size:11px">'+o.n+'</text>';});
+    for(let c=0;c<L;c++)s+='<text x="'+(x0-8)+'" y="'+(y0+c*rh+24)+'" text-anchor="end" class="m dim" style="font-size:11px">C'+c+'</text><line x1="'+x0+'" x2="'+(x0+OPS.length*cw)+'" y1="'+(y0+c*rh)+'" y2="'+(y0+c*rh)+'" style="stroke:var(--grid)"/>';
+    OPS.forEach((o,i)=>{const x=x0+i*cw+6,mob=alap[i]-asap[i];
+      if(v==='mob'){s+='<rect x="'+x+'" y="'+(y0+asap[i]*rh+4)+'" width="'+(cw-12)+'" height="'+((mob+1)*rh-8)+'" rx="4" style="fill:'+(mob?'var(--ok-soft)':'var(--bad-soft)')+';stroke:'+(mob?'var(--ok)':'var(--bad)')+'"/><text x="'+(x+(cw-12)/2)+'" y="'+(y0+asap[i]*rh+((mob+1)*rh)/2+4)+'" text-anchor="middle" class="m" style="font-size:12px;font-weight:600;fill:'+(mob?'var(--ok)':'var(--bad)')+'">'+mob+'</text>';}
+      else{const c=v==='asap'?asap[i]:alap[i];s+='<rect x="'+x+'" y="'+(y0+c*rh+4)+'" width="'+(cw-12)+'" height="'+(rh-8)+'" rx="4" style="fill:var(--p'+c+')"/><text x="'+(x+(cw-12)/2)+'" y="'+(y0+c*rh+25)+'" text-anchor="middle" class="m" style="fill:var(--onacc);font-size:11.5px">'+o.n+'</text>';}});
+    s+='<text x="'+x0+'" y="'+(y0+L*rh+22)+'" class="dim" style="font-size:11px">'+(v==='mob'?'빨강: 여유 0 (크리티컬 패스), 초록: 숫자만큼 미룰 수 있음':'열 = 연산, 행 = 시작 사이클')+'</text>';
+    $('#mbsvg').innerHTML=s;
+    $('#mbmsg').innerHTML=v==='asap'?'모든 연산을 가능한 한 일찍 시작합니다. 첫 사이클에 연산 4개가 몰려 연산기가 많이 필요합니다.':v==='alap'?'latency '+L+'사이클을 지키면서 가능한 한 늦게 시작합니다. e+f와 g+h가 뒤로 밀려 첫 사이클의 부담이 줄었습니다.':'여유가 있는 e+f(1)와 g+h(2)는 미뤄도 latency가 늘지 않습니다. 덧셈기 하나로도 '+L+'사이클을 지킬 수 있는 이유입니다. 리스트 스케줄링은 여유가 적은 연산부터 먼저 배치합니다.';
+  }
+  draw();
+})();
+
+quiz($('#quiz'),[
+  {q:'곱셈기 1개(2사이클), ALU 1개로 <code>a*b + c*d</code>를 계산하면 latency는?',o:['3사이클','4사이클','5사이클','6사이클'],a:2,e:'맞습니다. a*b가 0~1, c*d가 2~3사이클에 곱셈기를 쓰고, 덧셈이 4번 사이클에 들어가므로 5사이클입니다. 곱셈기가 2개면 3사이클입니다.'},
+  {q:'장난감 HLS에서 목표 클럭 주기를 4 ns에서 8 ns로 늘리면 일반적으로 어떻게 되나요?',o:['사이클 수도 총 시간도 항상 줄어든다','연산을 더 많이 체이닝해서 사이클 수는 줄지만, 총 시간은 줄지 않을 수도 있다','아무 변화가 없다'],a:1,e:'맞습니다. 사이클 수와 총 시간은 다릅니다. 사이클 하나가 길어지면 남는 시간이 생겨 총 시간은 오히려 늘 수 있습니다.'},
+  {q:'호너 방식 <code>((a*x+b)*x+c)*x+d</code>에 곱셈기를 4개 줘도 빨라지지 않는 이유는?',o:['곱셈이 너무 적어서','모든 연산이 바로 앞 연산의 결과를 기다리는 사슬이라서','ALU가 부족해서'],a:1,e:'맞습니다. 동시에 할 수 있는 연산이 없으니 연산기를 늘려도 소용없습니다. 자원보다 의존성이 병목입니다.'},
+  {q:'HLS에서 함수 인자 <code>int a[4]</code>는 기본적으로 무엇이 되나요?',o:['32비트 입력 포트 네 개','메모리 포트 (주소, enable, 데이터)','레지스터 네 개'],a:1,e:'맞습니다. 배열은 기본적으로 메모리로 구현되고, 한 사이클에 읽을 수 있는 개수가 포트 수로 제한됩니다. 7장에서 이 제한이 큰 문제가 됩니다.'},
+  {q:'II=1로 파이프라인한 루프 안의 <code>if (x &gt; 0) y = a*b; else y = c*d;</code>는 보통 어떻게 구현되나요?',o:['조건에 따라 FSM 상태를 나눈다','양쪽을 하드웨어로 만들고 MUX로 고른다(또는 입력을 먼저 고른다)','조건문은 합성되지 않는다'],a:1,e:'맞습니다. 매 사이클 새 반복이 들어오므로 상태를 나눌 수 없고, 분기 양쪽이 모두 회로로 존재합니다.'},
+  {q:'값이 0~200 범위인 변수를 <code>int</code> 대신 <code>ap_uint&lt;8&gt;</code>로 바꾸면?',o:['결과가 틀려진다','그 변수를 쓰는 연산기와 레지스터가 작아진다','속도만 느려진다'],a:1,e:'맞습니다. 하드웨어는 비트 수만큼 만들어지므로 필요한 만큼만 쓰면 LUT, FF, DSP가 모두 줄어듭니다.'},
+  {q:'C 시뮬레이션은 통과했는데 C/RTL co-simulation에서 결과가 틀렸습니다. 가장 먼저 의심할 것은?',o:['C 컴파일러 버전','사실과 다른 약속을 한 지시어나 초기화하지 않은 변수','모니터 해상도'],a:1,e:'맞습니다. C에서는 우연히 맞던 코드나 DEPENDENCE 같은 약속 위반이 RTL에서 드러납니다.'}
+]);
+</script>
+
+<footer><nav class="pn"><a class="pv" href="ch05-sync-async.html"><span>이전</span>5장. 동기와 비동기</a><a class="nx" href="ch07-hls-loops.html"><span>다음</span>7장. HLS 루프 지시어</a></nav><p>RTL과 HLS 입문: 전체 구성 (<a href="index.html">목차</a>, <a href="glossary.html">용어집</a>)</p><ol class="toc"><li><a href="ch01-rtl.html">1장. RTL로 생각하기</a></li><li><a href="ch02-timing.html">2장. 타이밍: 회로는 얼마나 빨리 돌 수 있나</a></li><li><a href="ch03-fsmd.html">3장. FSMD: 컨트롤러와 데이터패스</a></li><li><a href="ch04-pipeline.html">4장. 파이프라이닝</a></li><li><a href="ch05-sync-async.html">5장. 동기와 비동기</a></li><li class="on">6장. HLS: C가 회로가 되는 과정</li><li><a href="ch07-hls-loops.html">7장. HLS 루프 지시어</a></li><li><a href="ch08-memory.html">8장. 메모리와 의존성</a></li><li><a href="ch09-dataflow.html">9장. 작업 병렬과 스트리밍</a></li><li><a href="ch10-numbers-fir.html">10장. 수 표현과 DSP 예제</a></li><li><a href="ch11-systolic.html">11장. 시스톨릭 배열</a></li><li><a href="ch12-mini-tpu.html">12장. 미니 TPU로 숫자 인식</a></li></ol></footer>
+</main>
+</body></html>
